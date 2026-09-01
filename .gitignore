@@ -1,0 +1,21 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Java build files
+*.class
+target/
+out/
+build/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
