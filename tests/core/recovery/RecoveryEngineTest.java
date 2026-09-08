@@ -1,62 +1,50 @@
 package tests.core.recovery;
 
+import common.model.RecoveryResult;
 import core.disk.SectorReader;
-import core.scan.DiskScanner;
 import core.recovery.RecoveryEngine;
+import core.scan.DiskScanner;
 
 import java.io.File;
-import java.io.RandomAccessFile;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class RecoveryEngineTest {
-
+    private static final int SECTOR_SIZE = 512;
     private static int passed = 0;
     private static int failed = 0;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         System.out.println("=== RecoveryEngine Test Suite ===\n");
 
-        try {
+        File testFile = createTestDisk();
 
-            File testFile = new File("test-images/recovery-test.img");
-            testFile.getParentFile().mkdirs();
+        try (
+                SectorReader sectorReader =
+                        new SectorReader(testFile.getPath())
+        ) {
 
-            createTestDisk(testFile);
+            DiskScanner diskScanner =
+                    new DiskScanner(sectorReader);
 
-            try (SectorReader reader = new SectorReader(testFile.getPath())) {
+            RecoveryEngine recoveryEngine =
+                    new RecoveryEngine(diskScanner);
 
-                DiskScanner scanner = new DiskScanner(reader);
+            testRecoveryAnalysis(recoveryEngine);
+            testRecoverableData(recoveryEngine);
+            testNegativeStartSector(recoveryEngine);
+            testNegativeSectorCount(recoveryEngine);
+            testNullDiskScanner();
 
-                RecoveryEngine engine =
-                        new RecoveryEngine(scanner);
+        } finally {
 
-                testRecoveryAnalysis(engine);
-
-                testRecoverableDataDetection(engine);
-
-                testNegativeStartSector(engine);
-
-                testNegativeSectorCount(engine);
+            if (testFile.exists()) {
+                testFile.delete();
             }
-
-            testNullScanner();
-
-            testFile.delete();
-
-        } catch (Exception e) {
-
-            failed++;
-
-            System.out.println(
-                    "[FAIL] Unexpected exception: "
-                            + e.getMessage()
-            );
-
-            e.printStackTrace();
         }
 
         System.out.println("\n=== Test Summary ===");
-
         System.out.println("Passed: " + passed);
         System.out.println("Failed: " + failed);
 
@@ -65,155 +53,197 @@ public class RecoveryEngineTest {
         }
     }
 
-    private static void createTestDisk(File file)
-            throws Exception {
+    private static File createTestDisk() throws IOException {
 
-        try (RandomAccessFile raf =
-                     new RandomAccessFile(file, "rw")) {
+        File file =
+                File.createTempFile("ure-recovery-test", ".img");
 
-            raf.setLength(512L * 4);
+        byte[] diskData =
+                new byte[4 * SECTOR_SIZE];
 
-            // Sector 0 contains data
-            raf.seek(0);
-            raf.write("URE RECOVERY TEST".getBytes());
+        /*
+         * Sector 0 -> contains data
+         */
+        byte[] sector0Data =
+                "URE TEST - SECTOR 0".getBytes();
 
-            // Sector 1 remains empty
+        System.arraycopy(
+                sector0Data,
+                0,
+                diskData,
+                0,
+                sector0Data.length
+        );
 
-            // Sector 2 contains data
-            raf.seek(512L * 2);
-            raf.write("RECOVERABLE DATA".getBytes());
+        /*
+         * Sector 1 -> empty
+         */
 
-            // Sector 3 remains empty
+        /*
+         * Sector 2 -> contains data
+         */
+        byte[] sector2Data =
+                "RECOVERABLE DATA".getBytes();
+
+        int sector2Offset =
+                2 * SECTOR_SIZE;
+
+        System.arraycopy(
+                sector2Data,
+                0,
+                diskData,
+                sector2Offset,
+                sector2Data.length
+        );
+
+        /*
+         * Sector 3 -> empty
+         */
+
+        try (
+                FileOutputStream output =
+                        new FileOutputStream(file)
+        ) {
+
+            output.write(diskData);
         }
+
+        return file;
     }
 
     private static void testRecoveryAnalysis(
-            RecoveryEngine engine
-    ) throws Exception {
+            RecoveryEngine recoveryEngine)
+            throws IOException {
 
-        RecoveryEngine.RecoveryResult result =
-                engine.analyze(0, 4);
+        RecoveryResult result =
+                recoveryEngine.analyze(0, 4);
 
-        boolean success =
+        boolean correct =
+                result.getStartSector() == 0 &&
                 result.getTotalScanned() == 4 &&
                 result.getRecoverableSectors() == 2 &&
                 result.getEmptySectors() == 2;
 
-        check(
-                success,
-                "Recovery analysis returned correct statistics"
-        );
+        if (correct) {
 
-        System.out.println("  " + result);
+            pass(
+                    "Recovery analysis returned correct statistics"
+            );
+
+            System.out.println("  " + result);
+
+        } else {
+
+            fail(
+                    "Recovery analysis returned incorrect statistics"
+            );
+        }
     }
 
-    private static void testRecoverableDataDetection(
-            RecoveryEngine engine
-    ) throws Exception {
+    private static void testRecoverableData(
+            RecoveryEngine recoveryEngine)
+            throws IOException {
 
-        RecoveryEngine.RecoveryResult result =
-                engine.analyze(0, 4);
+        RecoveryResult result =
+                recoveryEngine.analyze(0, 4);
 
-        check(
-                result.hasRecoverableData(),
-                "Recoverable data detected successfully"
-        );
+        if (result.hasRecoverableData()) {
+
+            pass(
+                    "Recoverable data detected successfully"
+            );
+
+        } else {
+
+            fail(
+                    "Recoverable data was not detected"
+            );
+        }
     }
 
     private static void testNegativeStartSector(
-            RecoveryEngine engine
-    ) {
+            RecoveryEngine recoveryEngine) {
 
         try {
 
-            engine.analyze(-1, 1);
+            recoveryEngine.analyze(-1, 1);
 
-            check(
-                    false,
-                    "Negative start sector throws exception"
+            fail(
+                    "Negative start sector should throw exception"
             );
 
         } catch (IllegalArgumentException e) {
 
-            check(
-                    true,
+            pass(
                     "Negative start sector throws exception"
             );
 
-        } catch (Exception e) {
+        } catch (IOException e) {
 
-            check(
-                    false,
-                    "Negative start sector throws exception"
+            fail(
+                    "Unexpected IOException"
             );
         }
     }
 
     private static void testNegativeSectorCount(
-            RecoveryEngine engine
-    ) {
+            RecoveryEngine recoveryEngine) {
 
         try {
 
-            engine.analyze(0, -1);
+            recoveryEngine.analyze(0, -1);
 
-            check(
-                    false,
-                    "Negative sector count throws exception"
+            fail(
+                    "Negative sector count should throw exception"
             );
 
         } catch (IllegalArgumentException e) {
 
-            check(
-                    true,
+            pass(
                     "Negative sector count throws exception"
             );
 
-        } catch (Exception e) {
+        } catch (IOException e) {
 
-            check(
-                    false,
-                    "Negative sector count throws exception"
+            fail(
+                    "Unexpected IOException"
             );
         }
     }
 
-    private static void testNullScanner() {
+    private static void testNullDiskScanner() {
 
         try {
 
             new RecoveryEngine(null);
 
-            check(
-                    false,
-                    "Null DiskScanner throws exception"
+            fail(
+                    "Null DiskScanner should throw exception"
             );
 
         } catch (IllegalArgumentException e) {
 
-            check(
-                    true,
+            pass(
                     "Null DiskScanner throws exception"
             );
         }
     }
 
-    private static void check(
-            boolean condition,
-            String message
-    ) {
+    private static void pass(String message) {
 
-        if (condition) {
+        passed++;
 
-            passed++;
+        System.out.println(
+                "[PASS] " + message
+        );
+    }
 
-            System.out.println("[PASS] " + message);
+    private static void fail(String message) {
 
-        } else {
+        failed++;
 
-            failed++;
-
-            System.out.println("[FAIL] " + message);
-        }
+        System.out.println(
+                "[FAIL] " + message
+        );
     }
 }
