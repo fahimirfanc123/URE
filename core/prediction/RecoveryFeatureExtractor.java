@@ -2,40 +2,65 @@ package core.prediction;
 
 import filesystem.fat32.Fat32ClusterChain;
 import filesystem.fat32.Fat32Directory;
+import filesystem.fat32.Fat32OverwriteAnalyzer;
 import recovery.signature.SignatureDatabase;
 import scanner.FileSignatureScanner;
 
+import java.util.List;
+
 /**
- * Extracts real recovery information from URE components
+ * Extracts recovery information from URE components
  * and converts it into RecoveryFeatures.
  *
- * This class currently supports FAT32 recovery candidates.
+ * Currently supports FAT32 recovery candidates.
  */
 public class RecoveryFeatureExtractor {
 
     private final FileSignatureScanner signatureScanner;
     private final SignatureDatabase signatureDatabase;
     private final Fat32ClusterChain clusterChainAnalyzer;
+    private final Fat32OverwriteAnalyzer overwriteAnalyzer;
 
     public RecoveryFeatureExtractor() {
         this.signatureScanner = new FileSignatureScanner();
         this.signatureDatabase = new SignatureDatabase();
         this.clusterChainAnalyzer = new Fat32ClusterChain();
+        this.overwriteAnalyzer = new Fat32OverwriteAnalyzer();
     }
 
     /**
-     * Extracts recovery features from a FAT32 directory entry,
-     * raw candidate file bytes, and FAT table data.
+     * Backward-compatible FAT32 extraction.
      *
-     * @param directoryEntry parsed FAT32 directory entry
-     * @param fileData raw candidate file bytes
-     * @param fatData raw FAT32 FAT table bytes
-     * @return extracted recovery features
+     * Fragmentation can be determined, but overwrite
+     * percentage remains unknown because cluster size
+     * was not supplied.
      */
     public RecoveryFeatures extractFat32(
             Fat32Directory directoryEntry,
             byte[] fileData,
             byte[] fatData) {
+
+        return extractFat32(
+                directoryEntry,
+                fileData,
+                fatData,
+                null
+        );
+    }
+
+    /**
+     * Full FAT32 recovery feature extraction.
+     *
+     * @param directoryEntry parsed FAT32 directory entry
+     * @param fileData       candidate recovered file bytes
+     * @param fatData        raw FAT table bytes
+     * @param clusterSize    FAT32 cluster size in bytes
+     */
+    public RecoveryFeatures extractFat32(
+            Fat32Directory directoryEntry,
+            byte[] fileData,
+            byte[] fatData,
+            Long clusterSize) {
 
         if (directoryEntry == null) {
             throw new IllegalArgumentException(
@@ -49,64 +74,71 @@ public class RecoveryFeatureExtractor {
             );
         }
 
-        /*
-         * Detect file type using real magic-byte signatures.
-         */
         String detectedType =
                 signatureScanner.detectFileType(fileData);
 
         boolean validHeader =
                 !"UNKNOWN".equals(detectedType);
 
-        /*
-         * FAT32 metadata survived if meaningful file size
-         * and starting cluster still exist.
-         */
         boolean metadataAvailable =
                 directoryEntry.getFileSize() > 0 &&
                 directoryEntry.getFirstCluster() > 0;
 
-        /*
-         * Starting cluster information is available.
-         */
         boolean clustersAvailable =
                 directoryEntry.getFirstCluster() >= 2;
 
-        /*
-         * Validate candidate file footer.
-         */
         boolean validFooter =
-                hasValidFooter(fileData, detectedType);
+                hasValidFooter(
+                        fileData,
+                        detectedType
+                );
+
+        Boolean fragmented = null;
+        Double overwrittenPercentage = null;
 
         /*
-         * Fragmentation analysis.
-         *
-         * null means URE could not determine fragmentation.
+         * Read the real FAT32 cluster chain.
          */
-        Boolean fragmented = null;
-
         if (fatData != null &&
                 fatData.length > 0 &&
                 directoryEntry.getFirstCluster() >= 2) {
 
             try {
-                fragmented =
-                        clusterChainAnalyzer.analyzeFragmentation(
+
+                List<Long> clusterChain =
+                        clusterChainAnalyzer.readChain(
                                 fatData,
                                 directoryEntry.getFirstCluster()
                         );
+
+                fragmented =
+                        clusterChainAnalyzer.isFragmented(
+                                clusterChain
+                        );
+
+                /*
+                 * Calculate overwrite estimate only when
+                 * the cluster size is known.
+                 */
+                if (clusterSize != null &&
+                        clusterSize > 0) {
+
+                    overwrittenPercentage =
+                            overwriteAnalyzer
+                                    .estimateOverwritePercentage(
+                                            directoryEntry.getFileSize(),
+                                            clusterSize,
+                                            clusterChain.size()
+                                    );
+                }
 
             } catch (IllegalArgumentException |
                      IllegalStateException e) {
 
                 fragmented = null;
+                overwrittenPercentage = null;
             }
         }
-
-        /*
-         * Overwrite analysis is not implemented yet.
-         */
-        Double overwrittenPercentage = null;
 
         return new RecoveryFeatures(
                 validHeader,
@@ -119,8 +151,8 @@ public class RecoveryFeatureExtractor {
     }
 
     /**
-     * Checks whether candidate data ends with the expected
-     * footer for its detected file type.
+     * Checks whether candidate data ends with
+     * the expected signature footer.
      */
     private boolean hasValidFooter(
             byte[] data,
@@ -128,6 +160,7 @@ public class RecoveryFeatureExtractor {
 
         if (extension == null ||
                 "UNKNOWN".equals(extension)) {
+
             return false;
         }
 
@@ -136,6 +169,7 @@ public class RecoveryFeatureExtractor {
 
         if (footer == null ||
                 data.length < footer.length) {
+
             return false;
         }
 

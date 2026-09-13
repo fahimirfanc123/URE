@@ -18,78 +18,28 @@ public class RecoveryFeatureExtractorTest {
 
         System.out.println("=== RecoveryFeatureExtractor Test Suite ===\n");
 
-        testContiguousFile();
-        testFragmentedFile();
+        testFullHealthyCandidate();
+        testPartiallyOverwrittenCandidate();
 
         System.out.println("\n=== Test Summary ===");
         System.out.println("Passed: " + passed);
         System.out.println("Failed: " + failed);
     }
 
-    private static void testContiguousFile() {
+    private static void testFullHealthyCandidate() {
 
         try {
-            Fat32Directory entry =
-                    createDeletedJpegEntry(5, 6);
-
-            byte[] fileData =
-                    createJpegData();
-
-            byte[] fatData = new byte[64];
-
             /*
-             * Cluster chain:
+             * File size = 4096 bytes
+             * Cluster size = 1024 bytes
              *
-             * 5 -> 6 -> 7 -> END
-             *
-             * This is contiguous.
+             * Expected clusters = 4
              */
-            writeFatEntry(fatData, 5, 6);
-            writeFatEntry(fatData, 6, 7);
-            writeFatEntry(fatData, 7, 0x0FFFFFFF);
-
-            RecoveryFeatureExtractor extractor =
-                    new RecoveryFeatureExtractor();
-
-            RecoveryFeatures features =
-                    extractor.extractFat32(
-                            entry,
-                            fileData,
-                            fatData
-                    );
-
-            RecoveryPrediction prediction =
-                    new RecoveryPredictor()
-                            .predict(features);
-
-            if (Boolean.FALSE.equals(
-                    features.isFragmented())) {
-
-                pass("Contiguous FAT32 file detected correctly");
-
-                System.out.println(
-                        "  Fragmented: "
-                                + features.isFragmented()
-                );
-
-                System.out.println(
-                        "  " + prediction
-                );
-
-            } else {
-                fail("Contiguous file marked as fragmented");
-            }
-
-        } catch (Exception e) {
-            fail("Contiguous file test threw exception");
-        }
-    }
-
-    private static void testFragmentedFile() {
-
-        try {
             Fat32Directory entry =
-                    createDeletedJpegEntry(5, 6);
+                    createDeletedJpegEntry(
+                            5,
+                            4096
+                    );
 
             byte[] fileData =
                     createJpegData();
@@ -97,15 +47,18 @@ public class RecoveryFeatureExtractorTest {
             byte[] fatData = new byte[128];
 
             /*
-             * Cluster chain:
+             * 5 -> 6 -> 7 -> 8 -> END
              *
-             * 5 -> 20 -> 21 -> END
+             * 4 clusters available.
+             * File needs 4 clusters.
              *
-             * This is fragmented.
+             * Estimated overwrite = 0%
+             * Fragmented = false
              */
-            writeFatEntry(fatData, 5, 20);
-            writeFatEntry(fatData, 20, 21);
-            writeFatEntry(fatData, 21, 0x0FFFFFFF);
+            writeFatEntry(fatData, 5, 6);
+            writeFatEntry(fatData, 6, 7);
+            writeFatEntry(fatData, 7, 8);
+            writeFatEntry(fatData, 8, 0x0FFFFFFF);
 
             RecoveryFeatureExtractor extractor =
                     new RecoveryFeatureExtractor();
@@ -114,17 +67,30 @@ public class RecoveryFeatureExtractorTest {
                     extractor.extractFat32(
                             entry,
                             fileData,
-                            fatData
+                            fatData,
+                            1024L
                     );
 
             RecoveryPrediction prediction =
                     new RecoveryPredictor()
                             .predict(features);
 
-            if (Boolean.TRUE.equals(
-                    features.isFragmented())) {
+            boolean fragmentationCorrect =
+                    Boolean.FALSE.equals(
+                            features.isFragmented()
+                    );
 
-                pass("Fragmented FAT32 file detected correctly");
+            boolean overwriteCorrect =
+                    features.getOverwrittenPercentage() != null
+                            &&
+                    features.getOverwrittenPercentage() == 0.0;
+
+            if (fragmentationCorrect &&
+                    overwriteCorrect) {
+
+                pass(
+                        "Healthy FAT32 candidate analyzed correctly"
+                );
 
                 System.out.println(
                         "  Fragmented: "
@@ -132,15 +98,127 @@ public class RecoveryFeatureExtractorTest {
                 );
 
                 System.out.println(
+                        "  Overwrite: "
+                                + features.getOverwrittenPercentage()
+                                + "%"
+                );
+
+                System.out.println(
                         "  " + prediction
                 );
 
             } else {
-                fail("Fragmented file was not detected");
+                fail(
+                        "Healthy FAT32 candidate analysis incorrect"
+                );
             }
 
         } catch (Exception e) {
-            fail("Fragmented file test threw exception");
+
+            fail(
+                    "Healthy candidate test threw exception"
+            );
+        }
+    }
+
+    private static void testPartiallyOverwrittenCandidate() {
+
+        try {
+            /*
+             * File size = 4096 bytes
+             * Cluster size = 1024 bytes
+             *
+             * Expected clusters = 4
+             */
+            Fat32Directory entry =
+                    createDeletedJpegEntry(
+                            5,
+                            4096
+                    );
+
+            byte[] fileData =
+                    createJpegData();
+
+            byte[] fatData = new byte[128];
+
+            /*
+             * Only two clusters remain in the chain:
+             *
+             * 5 -> 20 -> END
+             *
+             * Expected clusters = 4
+             * Available clusters = 2
+             *
+             * Estimated overwrite = 50%
+             *
+             * Because 5 -> 20 is not sequential,
+             * the file is also fragmented.
+             */
+            writeFatEntry(fatData, 5, 20);
+            writeFatEntry(
+                    fatData,
+                    20,
+                    0x0FFFFFFF
+            );
+
+            RecoveryFeatureExtractor extractor =
+                    new RecoveryFeatureExtractor();
+
+            RecoveryFeatures features =
+                    extractor.extractFat32(
+                            entry,
+                            fileData,
+                            fatData,
+                            1024L
+                    );
+
+            RecoveryPrediction prediction =
+                    new RecoveryPredictor()
+                            .predict(features);
+
+            boolean fragmentationCorrect =
+                    Boolean.TRUE.equals(
+                            features.isFragmented()
+                    );
+
+            boolean overwriteCorrect =
+                    features.getOverwrittenPercentage() != null
+                            &&
+                    features.getOverwrittenPercentage() == 50.0;
+
+            if (fragmentationCorrect &&
+                    overwriteCorrect) {
+
+                pass(
+                        "Partially overwritten FAT32 candidate analyzed correctly"
+                );
+
+                System.out.println(
+                        "  Fragmented: "
+                                + features.isFragmented()
+                );
+
+                System.out.println(
+                        "  Overwrite: "
+                                + features.getOverwrittenPercentage()
+                                + "%"
+                );
+
+                System.out.println(
+                        "  " + prediction
+                );
+
+            } else {
+                fail(
+                        "Partially overwritten candidate analysis incorrect"
+                );
+            }
+
+        } catch (Exception e) {
+
+            fail(
+                    "Partially overwritten candidate test threw exception"
+            );
         }
     }
 
@@ -151,7 +229,7 @@ public class RecoveryFeatureExtractorTest {
         byte[] entry = new byte[32];
 
         /*
-         * Deleted marker.
+         * FAT32 deleted-file marker.
          */
         entry[0] = (byte) 0xE5;
 
@@ -168,7 +246,7 @@ public class RecoveryFeatureExtractorTest {
         entry[10] = 'G';
 
         /*
-         * First cluster LOW word.
+         * Starting cluster LOW word.
          */
         entry[26] =
                 (byte) (firstCluster & 0xFF);
@@ -215,11 +293,15 @@ public class RecoveryFeatureExtractorTest {
 
     private static void pass(String message) {
         passed++;
-        System.out.println("[PASS] " + message);
+        System.out.println(
+                "[PASS] " + message
+        );
     }
 
     private static void fail(String message) {
         failed++;
-        System.out.println("[FAIL] " + message);
+        System.out.println(
+                "[FAIL] " + message
+        );
     }
 }
