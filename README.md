@@ -13,35 +13,35 @@ Instead of relying only on operating-system file APIs, URE works closer to the s
 URE follows a layered recovery pipeline:
 
 ```text
-                         Disk / Disk Image
-                                │
-                                ▼
-                          SectorReader
-                                │
-                                ▼
-                     ┌─────────────────────┐
-                     │      MBRParser      │
-                     │      GPTParser      │
-                     └──────────┬──────────┘
-                                │
-                                ▼
-                         FAT32 / NTFS
-                      Filesystem Analysis
-                                │
-                                ▼
-                          DiskScanner
-                                │
-                                ▼
-                         RecoveryEngine
-                                │
-                                ▼
-                         RecoveryResult
-                                │
-                                ▼
-                         RecoveryWriter
-                                │
-                                ▼
-                         Recovered Data
+                                   Disk / Disk Image
+                                          │
+                                          ▼
+                                    SectorReader
+                                          │
+                                          ▼
+                               ┌─────────────────────┐
+                               │      MBRParser      │
+                               │      GPTParser      │
+                               └──────────┬──────────┘
+                                          │
+                                          ▼
+                                    FAT32 / NTFS
+                                Filesystem Analysis
+                                          │
+                                          ▼
+                                     DiskScanner
+                                          │
+                                          ▼
+                                    RecoveryEngine
+                                          │
+                                          ▼
+                                    RecoveryResult
+                                          │
+                                          ▼
+                                    RecoveryWriter
+                                          │
+                                          ▼
+                                    Recovered Data
 ```
 
 The graphical interface provides access to this recovery pipeline while keeping low-level recovery logic separated from the presentation layer.
