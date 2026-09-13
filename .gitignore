@@ -19,3 +19,4 @@ Thumbs.db
 # Environment / secrets
 .env
 *.env
+test-images/*.img
