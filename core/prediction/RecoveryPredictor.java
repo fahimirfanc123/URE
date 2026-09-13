@@ -3,6 +3,8 @@ package core.prediction;
 /**
  * Calculates a recovery confidence score
  * from the available recovery features.
+ *
+ * Unknown values are not rewarded or penalized.
  */
 public class RecoveryPredictor {
 
@@ -16,31 +18,59 @@ public class RecoveryPredictor {
 
         double score = 0.0;
 
+        // Header validity: max +25
         if (features.hasValidHeader()) {
             score += 25;
         }
 
+        // Footer validity: max +15
         if (features.hasValidFooter()) {
             score += 15;
         }
 
+        // Metadata availability: max +15
         if (features.hasMetadata()) {
             score += 15;
         }
 
+        // Cluster information: max +25
         if (features.hasClustersAvailable()) {
             score += 25;
         }
 
-        if (!features.isFragmented()) {
+        /*
+         * Fragmentation:
+         *
+         * false = confirmed not fragmented -> +10
+         * true  = fragmented               -> +0
+         * null  = unknown                  -> +0
+         */
+        Boolean fragmented = features.isFragmented();
+
+        if (fragmented != null && !fragmented) {
             score += 10;
         }
 
-        double overwritePenalty =
-                features.getOverwrittenPercentage() * 0.10;
+        /*
+         * Overwrite condition:
+         *
+         * 0% overwritten   -> +10
+         * 50% overwritten  -> +5
+         * 100% overwritten -> +0
+         * null             -> unknown, +0
+         */
+        Double overwrittenPercentage =
+                features.getOverwrittenPercentage();
 
-        score += 10 - overwritePenalty;
+        if (overwrittenPercentage != null) {
 
+            double overwriteScore =
+                    10 - (overwrittenPercentage * 0.10);
+
+            score += overwriteScore;
+        }
+
+        // Safety clamp: score can never leave 0-100 range.
         score = Math.max(0, Math.min(score, 100));
 
         String rating;
@@ -60,4 +90,3 @@ public class RecoveryPredictor {
         return new RecoveryPrediction(score, rating);
     }
 }
-

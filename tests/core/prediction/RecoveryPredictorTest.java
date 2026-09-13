@@ -15,7 +15,8 @@ public class RecoveryPredictorTest {
 
         testExcellentRecovery();
         testModerateRecovery();
-        testPoorRecovery();
+        testUnknownFragmentationAndOverwrite();
+        testVeryPoorRecovery();
         testInvalidOverwritePercentage();
         testNullFeatures();
 
@@ -32,11 +33,11 @@ public class RecoveryPredictorTest {
                     true,
                     true,
                     false,
-                    5
+                    5.0
             );
 
-            RecoveryPredictor predictor = new RecoveryPredictor();
-            RecoveryPrediction result = predictor.predict(features);
+            RecoveryPrediction result =
+                    new RecoveryPredictor().predict(features);
 
             if (result.getProbability() >= 80 &&
                     result.getRating().equals("Excellent")) {
@@ -60,11 +61,11 @@ public class RecoveryPredictorTest {
                     false,
                     true,
                     true,
-                    50
+                    50.0
             );
 
-            RecoveryPredictor predictor = new RecoveryPredictor();
-            RecoveryPrediction result = predictor.predict(features);
+            RecoveryPrediction result =
+                    new RecoveryPredictor().predict(features);
 
             if (result.getProbability() >= 40 &&
                     result.getProbability() < 60 &&
@@ -81,7 +82,35 @@ public class RecoveryPredictorTest {
         }
     }
 
-    private static void testPoorRecovery() {
+    private static void testUnknownFragmentationAndOverwrite() {
+        try {
+            RecoveryFeatures features = new RecoveryFeatures(
+                    true,
+                    true,
+                    true,
+                    true,
+                    null,
+                    null
+            );
+
+            RecoveryPrediction result =
+                    new RecoveryPredictor().predict(features);
+
+            if (result.getProbability() == 80.0 &&
+                    result.getRating().equals("Excellent")) {
+
+                pass("Unknown evidence does not receive extra score");
+                System.out.println("  " + result);
+            } else {
+                fail("Unknown evidence scoring incorrect");
+            }
+
+        } catch (Exception e) {
+            fail("Unknown evidence test threw exception");
+        }
+    }
+
+    private static void testVeryPoorRecovery() {
         try {
             RecoveryFeatures features = new RecoveryFeatures(
                     false,
@@ -89,11 +118,11 @@ public class RecoveryPredictorTest {
                     false,
                     false,
                     true,
-                    90
+                    90.0
             );
 
-            RecoveryPredictor predictor = new RecoveryPredictor();
-            RecoveryPrediction result = predictor.predict(features);
+            RecoveryPrediction result =
+                    new RecoveryPredictor().predict(features);
 
             if (result.getProbability() < 20 &&
                     result.getRating().equals("Very Poor")) {
@@ -105,7 +134,7 @@ public class RecoveryPredictorTest {
             }
 
         } catch (Exception e) {
-            fail("Poor recovery test threw exception");
+            fail("Very poor recovery test threw exception");
         }
     }
 
@@ -117,7 +146,7 @@ public class RecoveryPredictorTest {
                     true,
                     true,
                     false,
-                    120
+                    120.0
             );
 
             fail("Invalid overwrite percentage was accepted");
@@ -129,8 +158,7 @@ public class RecoveryPredictorTest {
 
     private static void testNullFeatures() {
         try {
-            RecoveryPredictor predictor = new RecoveryPredictor();
-            predictor.predict(null);
+            new RecoveryPredictor().predict(null);
 
             fail("Null features were accepted");
 
