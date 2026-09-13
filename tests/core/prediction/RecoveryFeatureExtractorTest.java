@@ -6,53 +6,190 @@ import core.prediction.RecoveryPrediction;
 import core.prediction.RecoveryPredictor;
 import filesystem.fat32.Fat32Directory;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 public class RecoveryFeatureExtractorTest {
+
+    private static int passed = 0;
+    private static int failed = 0;
 
     public static void main(String[] args) {
 
         System.out.println("=== RecoveryFeatureExtractor Test Suite ===\n");
 
+        testContiguousFile();
+        testFragmentedFile();
+
+        System.out.println("\n=== Test Summary ===");
+        System.out.println("Passed: " + passed);
+        System.out.println("Failed: " + failed);
+    }
+
+    private static void testContiguousFile() {
+
+        try {
+            Fat32Directory entry =
+                    createDeletedJpegEntry(5, 6);
+
+            byte[] fileData =
+                    createJpegData();
+
+            byte[] fatData = new byte[64];
+
+            /*
+             * Cluster chain:
+             *
+             * 5 -> 6 -> 7 -> END
+             *
+             * This is contiguous.
+             */
+            writeFatEntry(fatData, 5, 6);
+            writeFatEntry(fatData, 6, 7);
+            writeFatEntry(fatData, 7, 0x0FFFFFFF);
+
+            RecoveryFeatureExtractor extractor =
+                    new RecoveryFeatureExtractor();
+
+            RecoveryFeatures features =
+                    extractor.extractFat32(
+                            entry,
+                            fileData,
+                            fatData
+                    );
+
+            RecoveryPrediction prediction =
+                    new RecoveryPredictor()
+                            .predict(features);
+
+            if (Boolean.FALSE.equals(
+                    features.isFragmented())) {
+
+                pass("Contiguous FAT32 file detected correctly");
+
+                System.out.println(
+                        "  Fragmented: "
+                                + features.isFragmented()
+                );
+
+                System.out.println(
+                        "  " + prediction
+                );
+
+            } else {
+                fail("Contiguous file marked as fragmented");
+            }
+
+        } catch (Exception e) {
+            fail("Contiguous file test threw exception");
+        }
+    }
+
+    private static void testFragmentedFile() {
+
+        try {
+            Fat32Directory entry =
+                    createDeletedJpegEntry(5, 6);
+
+            byte[] fileData =
+                    createJpegData();
+
+            byte[] fatData = new byte[128];
+
+            /*
+             * Cluster chain:
+             *
+             * 5 -> 20 -> 21 -> END
+             *
+             * This is fragmented.
+             */
+            writeFatEntry(fatData, 5, 20);
+            writeFatEntry(fatData, 20, 21);
+            writeFatEntry(fatData, 21, 0x0FFFFFFF);
+
+            RecoveryFeatureExtractor extractor =
+                    new RecoveryFeatureExtractor();
+
+            RecoveryFeatures features =
+                    extractor.extractFat32(
+                            entry,
+                            fileData,
+                            fatData
+                    );
+
+            RecoveryPrediction prediction =
+                    new RecoveryPredictor()
+                            .predict(features);
+
+            if (Boolean.TRUE.equals(
+                    features.isFragmented())) {
+
+                pass("Fragmented FAT32 file detected correctly");
+
+                System.out.println(
+                        "  Fragmented: "
+                                + features.isFragmented()
+                );
+
+                System.out.println(
+                        "  " + prediction
+                );
+
+            } else {
+                fail("Fragmented file was not detected");
+            }
+
+        } catch (Exception e) {
+            fail("Fragmented file test threw exception");
+        }
+    }
+
+    private static Fat32Directory createDeletedJpegEntry(
+            int firstCluster,
+            int fileSize) {
+
+        byte[] entry = new byte[32];
+
         /*
-         * Create a fake 32-byte FAT32 directory entry.
-         *
-         * Byte 0 = 0xE5  -> deleted file
-         * Extension = JPG
-         * First cluster = 5
-         * File size = 6 bytes
+         * Deleted marker.
          */
-        byte[] directoryEntry = new byte[32];
+        entry[0] = (byte) 0xE5;
 
-        directoryEntry[0] = (byte) 0xE5;
-
-        directoryEntry[1] = 'H';
-        directoryEntry[2] = 'O';
-        directoryEntry[3] = 'T';
-        directoryEntry[4] = 'O';
-
-        directoryEntry[8] = 'J';
-        directoryEntry[9] = 'P';
-        directoryEntry[10] = 'G';
-
-        // First cluster LOW word = 5
-        directoryEntry[26] = 0x05;
-        directoryEntry[27] = 0x00;
-
-        // File size = 6 bytes
-        directoryEntry[28] = 0x06;
-        directoryEntry[29] = 0x00;
-        directoryEntry[30] = 0x00;
-        directoryEntry[31] = 0x00;
-
-        Fat32Directory fat32Entry =
-                new Fat32Directory(directoryEntry);
+        entry[1] = 'H';
+        entry[2] = 'O';
+        entry[3] = 'T';
+        entry[4] = 'O';
 
         /*
-         * Minimal JPEG-style byte sequence:
-         *
-         * Header = FF D8 FF
-         * Footer = FF D9
+         * JPG extension.
          */
-        byte[] fileData = new byte[] {
+        entry[8] = 'J';
+        entry[9] = 'P';
+        entry[10] = 'G';
+
+        /*
+         * First cluster LOW word.
+         */
+        entry[26] =
+                (byte) (firstCluster & 0xFF);
+
+        entry[27] =
+                (byte) ((firstCluster >> 8) & 0xFF);
+
+        /*
+         * File size.
+         */
+        ByteBuffer
+                .wrap(entry, 28, 4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(fileSize);
+
+        return new Fat32Directory(entry);
+    }
+
+    private static byte[] createJpegData() {
+
+        return new byte[] {
                 (byte) 0xFF,
                 (byte) 0xD8,
                 (byte) 0xFF,
@@ -60,50 +197,29 @@ public class RecoveryFeatureExtractorTest {
                 (byte) 0xFF,
                 (byte) 0xD9
         };
+    }
 
-        RecoveryFeatureExtractor extractor =
-                new RecoveryFeatureExtractor();
+    private static void writeFatEntry(
+            byte[] fatData,
+            int cluster,
+            int value) {
 
-        RecoveryFeatures features =
-                extractor.extractFat32(
-                        fat32Entry,
-                        fileData
-                );
+        int offset =
+                cluster * 4;
 
-        RecoveryPredictor predictor =
-                new RecoveryPredictor();
+        ByteBuffer
+                .wrap(fatData, offset, 4)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(value);
+    }
 
-        RecoveryPrediction prediction =
-                predictor.predict(features);
+    private static void pass(String message) {
+        passed++;
+        System.out.println("[PASS] " + message);
+    }
 
-        System.out.println("Deleted: "
-                + fat32Entry.isDeleted());
-
-        System.out.println("Filename: "
-                + fat32Entry.getFilename());
-
-        System.out.println("First Cluster: "
-                + fat32Entry.getFirstCluster());
-
-        System.out.println("File Size: "
-                + fat32Entry.getFileSize());
-
-        System.out.println();
-
-        System.out.println("Valid Header: "
-                + features.hasValidHeader());
-
-        System.out.println("Valid Footer: "
-                + features.hasValidFooter());
-
-        System.out.println("Metadata Available: "
-                + features.hasMetadata());
-
-        System.out.println("Clusters Available: "
-                + features.hasClustersAvailable());
-
-        System.out.println();
-
-        System.out.println(prediction);
+    private static void fail(String message) {
+        failed++;
+        System.out.println("[FAIL] " + message);
     }
 }
