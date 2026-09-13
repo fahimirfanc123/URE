@@ -1,3 +1,6 @@
+# Test disk images
+test-images/*.img
+
 # IntelliJ IDEA
 .idea/
 *.iml
