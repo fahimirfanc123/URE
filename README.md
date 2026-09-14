@@ -112,32 +112,36 @@ The project is designed to analyze storage devices and disk images at the sector
 ## FAT32 Recovery Pipeline
 
 ```text
-FAT32 Disk / Image
-        │
-        ▼
-FAT32BootSector
-        │
-        ▼
-Filesystem Geometry
-        │
-        ▼
-FAT32DeletedFileScanner
-        │
-        ▼
-Deleted Directory Entry
-        │
-        ├── Filename
-        ├── File Size
-        └── Starting Cluster
-        │
-        ▼
-FAT32FileRecovery
-        │
-        ▼
-RecoveryWriter
-        │
-        ▼
-Recovered File
+
+                    FAT32 Disk / Image
+                           │
+                           ▼
+                    FAT32BootSector
+                           │
+                           ▼
+                   Filesystem Geometry
+                           │
+                           ▼
+                FAT32DeletedFileScanner
+                           │
+                           ▼
+                 Deleted Directory Entry
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+          Filename      File Size   Starting Cluster
+              │            │            │
+              └────────────┼────────────┘
+                           │
+                           ▼
+                  FAT32FileRecovery
+                           │
+                           ▼
+                    RecoveryWriter
+                           │
+                           ▼
+                    Recovered File
 ```
 
 ---
@@ -145,44 +149,47 @@ Recovered File
 ## NTFS Recovery Pipeline
 
 ```text
-NTFS Disk / Image
-        │
-        ▼
-NTFSBootSector
-        │
-        ▼
-NTFSMFTReader
-        │
-        ▼
-$MFT Records
-        │
-        ▼
-NTFSMFTParser
-        │
-        ▼
-NTFSDeletedFileScanner
-        │
-        ▼
-Deleted File Entry
-        │
-        ▼
-NTFSFileRecovery
-        │
-        ├── Resident $DATA
-        │
-        └── Non-Resident $DATA
+                     NTFS Disk / Image
+                           │
+                           ▼
+                     NTFSBootSector
+                           │
+                           ▼
+                      NTFSMFTReader
+                           │
+                           ▼
+                       $MFT Records
+                           │
+                           ▼
+                      NTFSMFTParser
+                           │
+                           ▼
+                NTFSDeletedFileScanner
+                           │
+                           ▼
+                  Deleted File Entry
+                           │
+                           ▼
+                    NTFSFileRecovery
+                           │
+                 ┌─────────┴─────────┐
+                 │                   │
+                 ▼                   ▼
+          Resident $DATA      Non-Resident $DATA
+                                     │
+                                     ▼
+                             NTFSRunListParser
+                                     │
+                                     ▼
+                                  Data Runs
+                                     │
+                 ┌───────────────────┘
                  │
                  ▼
-          NTFSRunListParser
+            RecoveryWriter
                  │
                  ▼
-             Data Runs
-        │
-        ▼
-RecoveryWriter
-        │
-        ▼
-Recovered File
+            Recovered File
 ```
 
 ---
@@ -332,40 +339,41 @@ Current support includes:
 ## GUI Workflow
 
 ```text
-MINION URE
-    │
-    ▼
-Home
-    │
-    ▼
-Drive / Image Selection
-    │
-    ▼
-Live Scan
-    │
-    ▼
-Scan Results
-    │
-    ▼
-Recovery Analysis
-    │
-    ▼
-Select Recovery Method
-    │
-    ├── Raw Sector Recovery
-    │
-    ├── FAT32 File Recovery
-    │
-    └── NTFS File Recovery
-            │
-            ▼
-      Select Deleted File
-            │
-            ▼
-          Recover
-            │
-            ▼
-       Save Output
+                         MINION URE
+                              │
+                              ▼
+                             Home
+                              │
+                              ▼
+                  Drive / Image Selection
+                              │
+                              ▼
+                         Live Scan
+                              │
+                              ▼
+                        Scan Results
+                              │
+                              ▼
+                    Recovery Analysis
+                              │
+                              ▼
+                 Select Recovery Method
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+              ▼               ▼               ▼
+        Raw Recovery    FAT32 Recovery    NTFS Recovery
+              │               │               │
+              └───────────────┼───────────────┘
+                              │
+                              ▼
+                    Select Deleted File
+                              │
+                              ▼
+                           Recover
+                              │
+                              ▼
+                        Save Output
 ```
 
 ---
