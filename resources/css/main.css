@@ -1,3 +1,8 @@
+/* =========================================================
+   MINION URE
+   MAIN APPLICATION THEME
+========================================================= */
+
 .root {
 
     -fx-background-color:
@@ -16,60 +21,134 @@
 
 
 /* =========================================================
-   LAYOUT
+   MAIN LAYOUT
 ========================================================= */
 
 .layout {
 
-    -fx-background-color: transparent;
+    -fx-background-color:
+        linear-gradient(
+            to bottom,
+            #070B14,
+            #0A101D 58%,
+            #0B1424
+        );
 }
 
 
 /* =========================================================
-   TITLE BAR
+   TOP BAR
 ========================================================= */
 
 .top-bar {
 
     -fx-padding:
-        12 18 12 22;
+        8 10 8 16;
 
-    -fx-spacing: 12;
+    -fx-min-height:
+        48px;
 
-    -fx-background-color: transparent;
+    -fx-pref-height:
+        48px;
 
-    -fx-border-width: 0;
+    -fx-background-color:
+        rgba(
+            7,
+            11,
+            20,
+            0.97
+        );
+
+    -fx-border-color:
+        transparent
+        transparent
+        rgba(
+            255,
+            255,
+            255,
+            0.055
+        )
+        transparent;
+
+    -fx-border-width:
+        0 0 1 0;
 }
 
+
+/* =========================================================
+   MINI LOGO
+========================================================= */
 
 .mini-logo {
 
-    -fx-font-size: 27px;
+    -fx-min-width:
+        30px;
 
-    -fx-font-weight: bold;
+    -fx-min-height:
+        30px;
 
-    -fx-text-fill: #FFD91A;
+    -fx-alignment:
+        center;
 
-    -fx-padding:
-        0 8 0 0;
+    -fx-background-color:
+        linear-gradient(
+            to bottom right,
+            #E95420,
+            #A63B18
+        );
+
+    -fx-background-radius:
+        7px;
+
+    -fx-border-radius:
+        7px;
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.10
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        15px;
+
+    -fx-font-weight:
+        900;
 }
 
 
+/* =========================================================
+   BRAND
+========================================================= */
+
 .brand {
 
-    -fx-font-size: 16px;
+    -fx-text-fill:
+        #F5F7FB;
 
-    -fx-font-weight: bold;
+    -fx-font-size:
+        12px;
 
-    -fx-text-fill: #F8FAFC;
+    -fx-font-weight:
+        900;
 }
 
 
 .brand-subtitle {
 
-    -fx-font-size: 11px;
+    -fx-text-fill:
+        #586A82;
 
-    -fx-text-fill: #7E8DA3;
+    -fx-font-size:
+        7px;
+
+    -fx-font-weight:
+        bold;
 }
 
 
@@ -79,27 +158,27 @@
 
 .nav-label {
 
-    -fx-font-size: 11px;
+    -fx-text-fill:
+        #718198;
 
-    -fx-text-fill: #8EA0BA;
+    -fx-font-size:
+        9px;
 
-    -fx-font-weight: bold;
-
-    -fx-cursor: hand;
-}
-
-
-.nav-label:hover {
-
-    -fx-text-fill: #E95420;
+    -fx-font-weight:
+        bold;
 }
 
 
 .nav-arrow {
 
-    -fx-font-size: 17px;
+    -fx-text-fill:
+        #E95420;
 
-    -fx-text-fill: #4D5B70;
+    -fx-font-size:
+        15px;
+
+    -fx-font-weight:
+        bold;
 }
 
 
@@ -108,106 +187,59 @@
 ========================================================= */
 
 .window-button {
+    -fx-min-width: 44px;
+    -fx-pref-width: 44px;
+    -fx-max-width: 44px;
 
-    -fx-min-width: 30px;
-    -fx-min-height: 30px;
-
-    -fx-pref-width: 30px;
-    -fx-pref-height: 30px;
-
-    -fx-max-width: 30px;
-    -fx-max-height: 30px;
+    -fx-min-height: 34px;
+    -fx-pref-height: 34px;
+    -fx-max-height: 34px;
 
     -fx-padding: 0;
 
-    -fx-background-radius: 50%;
+    -fx-background-color: transparent;
+    -fx-background-radius: 7px;
 
-    -fx-border-radius: 50%;
+    -fx-border-color: transparent;
+    -fx-border-radius: 7px;
 
-    -fx-background-color:
-        rgba(
-            255,
-            255,
-            255,
-            0.055
-        );
+    -fx-text-fill: #8997AA;
 
-    -fx-border-color:
-        rgba(
-            255,
-            255,
-            255,
-            0.05
-        );
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
 
-    -fx-text-fill: #AAB4C3;
-
-    -fx-font-size: 13px;
-
-    -fx-cursor: hand;
+    -fx-cursor: none;
 }
 
-
-.window-button:hover {
-
-    -fx-background-color:
-        rgba(
-            255,
-            255,
-            255,
-            0.10
-        );
-
-    -fx-text-fill: white;
-}
-
-
-.minimize-button:hover {
-
-    -fx-background-color:
-        rgba(
-            233,
-            84,
-            32,
-            0.20
-        );
-
-    -fx-text-fill: #F08763;
-}
-
-
+.minimize-button:hover,
 .maximize-button:hover {
-
-    -fx-background-color:
-        rgba(
-            233,
-            84,
-            32,
-            0.20
-        );
-
-    -fx-text-fill: #F08763;
+    -fx-background-color: rgba(233,84,32,0.14);
+    -fx-text-fill: #E95420;
 }
-
 
 .close-button:hover {
-
-    -fx-background-color: #E95420;
-
+    -fx-background-color: #C42B1C;
     -fx-text-fill: white;
 }
 
+.window-button:pressed {
+    -fx-background-color: rgba(233,84,32,0.28);
+}
 
 /* =========================================================
-   HERO
+   HOME HERO
 ========================================================= */
 
 .hero {
 
     -fx-padding:
-        22 40 22 40;
+        30 40 30 40;
 
-    -fx-alignment: center;
+    -fx-spacing:
+        18;
+
+    -fx-background-color:
+        transparent;
 }
 
 
@@ -217,99 +249,136 @@
 
 .version {
 
-    -fx-padding:
-        6 14 6 14;
+    -fx-text-fill:
+        #75859B;
 
-    -fx-background-color:
-        rgba(
-            8,
-            13,
-            24,
-            0.78
-        );
+    -fx-font-size:
+        9px;
 
-    -fx-border-color: #293649;
-
-    -fx-border-width: 1;
-
-    -fx-border-radius:
-        6 0 0 6;
-
-    -fx-background-radius:
-        6 0 0 6;
-
-    -fx-text-fill: #8DA0B8;
-
-    -fx-font-size: 11px;
+    -fx-font-weight:
+        bold;
 }
 
 
 .beta {
 
     -fx-padding:
-        6 14 6 14;
+        3 7 3 7;
 
     -fx-background-color:
         rgba(
-            94,
-            39,
-            80,
-            0.72
+            233,
+            84,
+            32,
+            0.12
         );
 
     -fx-background-radius:
-        0 6 6 0;
+        4px;
 
-    -fx-text-fill: #F0C8DE;
+    -fx-text-fill:
+        #E95420;
 
-    -fx-font-size: 11px;
+    -fx-font-size:
+        8px;
 
-    -fx-font-weight: bold;
+    -fx-font-weight:
+        bold;
 }
 
 
 /* =========================================================
-   MAIN LOGO
+   HERO LOGO
 ========================================================= */
 
 .hero-logo {
 
-    -fx-text-fill: #FFD91A;
+    -fx-min-width:
+        72px;
 
-    -fx-font-size: 65px;
+    -fx-min-height:
+        72px;
 
-    -fx-font-weight: 900;
+    -fx-alignment:
+        center;
+
+    -fx-background-color:
+        linear-gradient(
+            to bottom right,
+            #E95420,
+            #9E3516
+        );
+
+    -fx-background-radius:
+        18px;
+
+    -fx-border-radius:
+        18px;
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.11
+        );
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(
+                233,
+                84,
+                32,
+                0.22
+            ),
+            25,
+            0.2,
+            0,
+            8
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        34px;
+
+    -fx-font-weight:
+        900;
 }
 
 
 /* =========================================================
-   TITLE
+   MAIN TITLE
 ========================================================= */
 
 .title {
 
-    -fx-font-size: 47px;
-
-    -fx-font-weight: 900;
-
     -fx-text-fill:
-        linear-gradient(
-            to right,
-            #F8FAFC 0%,
-            #F8FAFC 68%,
-            #FFD91A 69%,
-            #FFD91A 100%
-        );
+        #F8FAFC;
+
+    -fx-font-size:
+        40px;
+
+    -fx-font-weight:
+        900;
 }
 
 
 .subtitle {
 
-    -fx-font-size: 14px;
+    -fx-text-fill:
+        #8493A7;
 
-    -fx-font-weight: 600;
+    -fx-font-size:
+        11px;
 
-    -fx-text-fill: #CFD6E0;
+    -fx-font-weight:
+        bold;
+
+    -fx-letter-spacing:
+        2px;
 }
 
 
@@ -319,15 +388,24 @@
 
 .divider {
 
-    -fx-min-width: 40px;
+    -fx-min-height:
+        1px;
 
-    -fx-max-width: 40px;
+    -fx-max-height:
+        1px;
 
-    -fx-min-height: 2px;
-
-    -fx-max-height: 2px;
-
-    -fx-background-color: #E95420;
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            transparent,
+            rgba(
+                233,
+                84,
+                32,
+                0.55
+            ),
+            transparent
+        );
 }
 
 
@@ -337,11 +415,11 @@
 
 .tagline {
 
-    -fx-font-size: 12px;
+    -fx-text-fill:
+        #66778E;
 
-    -fx-text-fill: #8292A9;
-
-    -fx-font-weight: 600;
+    -fx-font-size:
+        11px;
 }
 
 
@@ -351,36 +429,39 @@
 
 .feature-card {
 
+    -fx-pref-width:
+        175px;
+
+    -fx-pref-height:
+        105px;
+
     -fx-padding:
-        17 22 17 22;
-
-    -fx-min-width: 205px;
-
-    -fx-max-width: 250px;
+        15;
 
     -fx-background-color:
         rgba(
-            14,
-            20,
-            33,
-            0.88
+            255,
+            255,
+            255,
+            0.025
         );
+
+    -fx-background-radius:
+        10px;
+
+    -fx-border-radius:
+        10px;
 
     -fx-border-color:
         rgba(
-            121,
-            138,
-            160,
-            0.22
+            255,
+            255,
+            255,
+            0.065
         );
 
-    -fx-border-radius: 11;
-
-    -fx-background-radius: 11;
-
-    -fx-border-width: 1;
-
-    -fx-cursor: hand;
+    -fx-border-width:
+        1px;
 }
 
 
@@ -388,10 +469,10 @@
 
     -fx-background-color:
         rgba(
-            22,
-            29,
-            45,
-            0.96
+            233,
+            84,
+            32,
+            0.055
         );
 
     -fx-border-color:
@@ -399,36 +480,44 @@
             233,
             84,
             32,
-            0.65
+            0.33
         );
 
-    -fx-translate-y: -1;
+    -fx-translate-y:
+        -2px;
 }
 
 
 .card-icon {
 
-    -fx-font-size: 29px;
+    -fx-text-fill:
+        #E95420;
 
-    -fx-text-fill: #E95420;
+    -fx-font-size:
+        23px;
 }
 
 
 .card-title {
 
-    -fx-font-size: 15px;
+    -fx-text-fill:
+        #E7EBF2;
 
-    -fx-font-weight: bold;
+    -fx-font-size:
+        11px;
 
-    -fx-text-fill: #F8FAFC;
+    -fx-font-weight:
+        bold;
 }
 
 
 .card-subtitle {
 
-    -fx-font-size: 12px;
+    -fx-text-fill:
+        #67778C;
 
-    -fx-text-fill: #8D9BB0;
+    -fx-font-size:
+        9px;
 }
 
 
@@ -439,7 +528,7 @@
 .start-button {
 
     -fx-padding:
-        14 38 14 38;
+        13 28 13 28;
 
     -fx-background-color:
         linear-gradient(
@@ -448,27 +537,31 @@
             #772953
         );
 
-    -fx-background-radius: 11;
+    -fx-background-radius:
+        9px;
 
-    -fx-border-radius: 11;
+    -fx-border-radius:
+        9px;
 
     -fx-border-color:
         rgba(
             233,
             84,
             32,
-            0.28
+            0.38
         );
 
-    -fx-border-width: 1;
+    -fx-text-fill:
+        white;
 
-    -fx-text-fill: #F7F4F6;
+    -fx-font-size:
+        11px;
 
-    -fx-font-size: 15px;
+    -fx-font-weight:
+        bold;
 
-    -fx-font-weight: bold;
-
-    -fx-cursor: hand;
+    -fx-cursor:
+        none;
 }
 
 
@@ -478,30 +571,36 @@
         linear-gradient(
             to right,
             #772953,
-            #963758
+            #99365E
         );
 
     -fx-border-color:
-        rgba(
-            233,
-            84,
-            32,
-            0.72
+        #E95420;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(
+                233,
+                84,
+                32,
+                0.20
+            ),
+            20,
+            0.1,
+            0,
+            5
         );
-
-    -fx-scale-x: 1.015;
-
-    -fx-scale-y: 1.015;
 }
 
 
 .start-button:pressed {
 
-    -fx-background-color: #4C1D40;
+    -fx-scale-x:
+        0.98;
 
-    -fx-scale-x: 0.985;
-
-    -fx-scale-y: 0.985;
+    -fx-scale-y:
+        0.98;
 }
 
 
@@ -511,17 +610,21 @@
 
 .bottom-bar {
 
-    -fx-padding:
-        15 28 15 28;
+    -fx-min-height:
+        38px;
 
-    -fx-spacing: 18;
+    -fx-pref-height:
+        38px;
+
+    -fx-padding:
+        0 16 0 16;
 
     -fx-background-color:
         rgba(
-            5,
-            8,
-            15,
-            0.42
+            6,
+            10,
+            18,
+            0.82
         );
 
     -fx-border-color:
@@ -529,7 +632,7 @@
             255,
             255,
             255,
-            0.06
+            0.045
         )
         transparent
         transparent
@@ -542,17 +645,611 @@
 
 .pulse {
 
-    -fx-font-size: 24px;
+    -fx-text-fill:
+        #4DDB81;
 
-    -fx-text-fill: #E95420;
+    -fx-font-size:
+        9px;
 }
 
 
 .footer-text {
 
-    -fx-font-size: 10px;
+    -fx-text-fill:
+        #536278;
 
-    -fx-text-fill: #718097;
+    -fx-font-size:
+        8px;
 
-    -fx-font-weight: 600;
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   MODULE 2 — DRIVE SELECTION
+========================================================= */
+
+.drive-page {
+
+    -fx-padding:
+        24 40 30 40;
+
+    -fx-spacing:
+        18;
+
+    -fx-background-color:
+        transparent;
+}
+
+
+/* =========================================================
+   DRIVE PAGE HEADER
+========================================================= */
+
+.drive-step-label {
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #697A92;
+}
+
+
+.drive-secondary-button {
+
+    -fx-padding:
+        8 14 8 14;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.035
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    -fx-border-radius:
+        7px;
+
+    -fx-background-radius:
+        7px;
+
+    -fx-text-fill:
+        #97A5B9;
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.drive-secondary-button:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.12
+        );
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.50
+        );
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   DRIVE PAGE TITLE
+========================================================= */
+
+.drive-page-title {
+
+    -fx-font-size:
+        28px;
+
+    -fx-font-weight:
+        900;
+
+    -fx-text-fill:
+        #F8FAFC;
+}
+
+
+.drive-page-subtitle {
+
+    -fx-font-size:
+        12px;
+
+    -fx-text-fill:
+        #7F90A7;
+}
+
+
+/* =========================================================
+   DRIVE PANELS
+========================================================= */
+
+.drive-panel {
+
+    -fx-padding:
+        20;
+
+    -fx-spacing:
+        14;
+
+    -fx-background-color:
+        rgba(
+            12,
+            18,
+            30,
+            0.82
+        );
+
+    -fx-border-color:
+        rgba(
+            120,
+            136,
+            158,
+            0.18
+        );
+
+    -fx-border-width:
+        1px;
+
+    -fx-border-radius:
+        12px;
+
+    -fx-background-radius:
+        12px;
+}
+
+
+.drive-panel-title {
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #9AABC1;
+}
+
+
+.drive-status {
+
+    -fx-padding:
+        4 8 4 8;
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.12
+        );
+
+    -fx-background-radius:
+        5px;
+
+    -fx-text-fill:
+        #E95420;
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   DRIVE LIST
+========================================================= */
+
+.drive-list {
+
+    -fx-spacing:
+        10;
+}
+
+
+.drive-card {
+
+    -fx-padding:
+        14 16 14 16;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.06
+        );
+
+    -fx-border-radius:
+        9px;
+
+    -fx-background-radius:
+        9px;
+
+    -fx-cursor:
+        none;
+}
+
+
+.drive-card:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.07
+        );
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.45
+        );
+
+    -fx-translate-x:
+        2px;
+}
+
+
+.drive-card-icon {
+
+    -fx-font-size:
+        27px;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+.drive-card-name {
+
+    -fx-font-size:
+        13px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #F1F5F9;
+}
+
+
+.drive-card-path {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #708198;
+}
+
+
+.drive-card-storage {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #8493A7;
+}
+
+
+.drive-select-label {
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   SELECTED DRIVE
+========================================================= */
+
+.selected-drive-icon {
+
+    -fx-font-size:
+        48px;
+
+    -fx-text-fill:
+        #FFD91A;
+}
+
+
+.selected-drive-name {
+
+    -fx-font-size:
+        17px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #F8FAFC;
+}
+
+
+.selected-drive-path {
+
+    -fx-font-size:
+        11px;
+
+    -fx-text-fill:
+        #78889E;
+}
+
+
+.selected-drive-size {
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   DRIVE DIVIDER
+========================================================= */
+
+.drive-divider {
+
+    -fx-min-height:
+        1px;
+
+    -fx-max-height:
+        1px;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+}
+
+
+/* =========================================================
+   HELP TEXT
+========================================================= */
+
+.drive-help-text {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #7C8CA2;
+}
+
+
+/* =========================================================
+   DISK IMAGE BUTTON
+========================================================= */
+
+.image-button {
+
+    -fx-padding:
+        10 15 10 15;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.04
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.09
+        );
+
+    -fx-border-radius:
+        8px;
+
+    -fx-background-radius:
+        8px;
+
+    -fx-text-fill:
+        #AEB9C8;
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.image-button:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.08
+        );
+
+    -fx-border-color:
+        #E95420;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   CONTINUE SCAN BUTTON
+========================================================= */
+
+.scan-button {
+
+    -fx-padding:
+        13 20 13 20;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #5E2750,
+            #772953
+        );
+
+    -fx-background-radius:
+        9px;
+
+    -fx-border-radius:
+        9px;
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.35
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        12px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.scan-button:hover {
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #772953,
+            #963758
+        );
+
+    -fx-border-color:
+        #E95420;
+}
+
+
+.scan-button:pressed {
+
+    -fx-scale-x:
+        0.97;
+
+    -fx-scale-y:
+        0.97;
+}
+
+
+.scan-button:disabled {
+
+    -fx-opacity:
+        0.35;
+}
+
+
+/* =========================================================
+   WARNING
+========================================================= */
+
+.drive-warning {
+
+    -fx-padding:
+        11 15 11 15;
+
+    -fx-background-color:
+        rgba(
+            255,
+            217,
+            26,
+            0.045
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            217,
+            26,
+            0.15
+        );
+
+    -fx-border-radius:
+        8px;
+
+    -fx-background-radius:
+        8px;
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #A9A381;
 }

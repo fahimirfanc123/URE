@@ -1,414 +1,112 @@
 package gui;
 
-import javafx.animation.AnimationTimer;
-import javafx.animation.FadeTransition;
 import javafx.application.Application;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javafx.util.Duration;
+
+import java.io.File;
 
 public class Main extends Application {
 
-    private double mouseX;
-    private double mouseY;
+    /*
+     * =========================================================
+     * WINDOW DRAGGING
+     * =========================================================
+     */
 
-    private double cursorX;
-    private double cursorY;
+    private double dragOffsetX;
+    private double dragOffsetY;
 
-    private double cursorRadius = 8;
-    private double targetRadius = 8;
+    /*
+     * =========================================================
+     * MANUAL MAXIMIZE STATE
+     * =========================================================
+     */
 
-    private double windowDragX;
-    private double windowDragY;
+    private boolean maximized = false;
+
+    private double restoreX;
+    private double restoreY;
+    private double restoreWidth;
+    private double restoreHeight;
+
+    /*
+     * =========================================================
+     * MAIN UI
+     * =========================================================
+     */
+
+    private BorderPane layout;
+    private VBox homePage;
+
+    private Button maximizeButton;
 
     @Override
     public void start(Stage stage) {
 
+        /*
+         * Undecorated window because MINION
+         * has its own title bar.
+         */
         stage.initStyle(StageStyle.UNDECORATED);
 
+        stage.setTitle("MINION URE");
+
+        /*
+         * Root stack:
+         *
+         * layer 1 = application
+         * layer 2 = magnetic cursor
+         */
         StackPane root = new StackPane();
-        root.getStyleClass().add("root");
 
-        BorderPane layout = new BorderPane();
-        layout.getStyleClass().add("layout");
+        layout = new BorderPane();
 
-        /* =========================================================
-           CUSTOM TITLE BAR
-        ========================================================= */
-
-        HBox topBar = new HBox(14);
-        topBar.getStyleClass().add("top-bar");
-        topBar.setAlignment(Pos.CENTER_LEFT);
-
-        Label logo = new Label("M");
-        logo.getStyleClass().add("mini-logo");
-
-        VBox brandBox = new VBox(1);
-
-        Label brand = new Label("MINION URE");
-        brand.getStyleClass().add("brand");
-
-        Label brandSubtitle =
-                new Label("Universal Recovery Engine");
-
-        brandSubtitle.getStyleClass().add(
-                "brand-subtitle"
-        );
-
-        brandBox.getChildren().addAll(
-                brand,
-                brandSubtitle
-        );
-
-        Region topSpacer = new Region();
-        HBox.setHgrow(
-                topSpacer,
-                Priority.ALWAYS
-        );
-
-        HBox navigation = new HBox(18);
-        navigation.setAlignment(Pos.CENTER);
-
-        Label recoverNav =
-                createNavLabel("RECOVER");
-
-        Label analyseNav =
-                createNavLabel("ANALYSE");
-
-        Label predictNav =
-                createNavLabel("PREDICT");
-
-        navigation.getChildren().addAll(
-                recoverNav,
-                createArrow(),
-                analyseNav,
-                createArrow(),
-                predictNav
-        );
-
-        HBox windowControls = new HBox(8);
-        windowControls.setAlignment(
-                Pos.CENTER_RIGHT
-        );
-
-        Button minimizeButton =
-                new Button("—");
-
-        minimizeButton.getStyleClass()
-                .addAll(
-                        "window-button",
-                        "minimize-button"
-                );
-
-        Button maximizeButton =
-                new Button("□");
-
-        maximizeButton.getStyleClass()
-                .addAll(
-                        "window-button",
-                        "maximize-button"
-                );
-
-        Button closeButton =
-                new Button("×");
-
-        closeButton.getStyleClass()
-                .addAll(
-                        "window-button",
-                        "close-button"
-                );
-
-        minimizeButton.setTooltip(
-                new Tooltip("Minimize")
-        );
-
-        maximizeButton.setTooltip(
-                new Tooltip("Maximize")
-        );
-
-        closeButton.setTooltip(
-                new Tooltip("Close")
-        );
-
-        minimizeButton.setOnAction(
-                event ->
-                        stage.setIconified(true)
-        );
-
-        maximizeButton.setOnAction(
-                event ->
-                        stage.setMaximized(
-                                !stage.isMaximized()
-                        )
-        );
-
-        closeButton.setOnAction(
-                event ->
-                        stage.close()
-        );
-
-        windowControls.getChildren().addAll(
-                minimizeButton,
-                maximizeButton,
-                closeButton
-        );
-
-        topBar.getChildren().addAll(
-                logo,
-                brandBox,
-                topSpacer,
-                navigation,
-                windowControls
-        );
-
-        topBar.setOnMousePressed(event -> {
-
-            if (!stage.isMaximized()) {
-
-                windowDragX =
-                        event.getSceneX();
-
-                windowDragY =
-                        event.getSceneY();
-            }
-        });
-
-        topBar.setOnMouseDragged(event -> {
-
-            if (!stage.isMaximized()) {
-
-                stage.setX(
-                        event.getScreenX()
-                                - windowDragX
-                );
-
-                stage.setY(
-                        event.getScreenY()
-                                - windowDragY
-                );
-            }
-        });
-
-        topBar.setOnMouseClicked(event -> {
-
-            if (event.getClickCount() == 2) {
-
-                stage.setMaximized(
-                        !stage.isMaximized()
-                );
-            }
-        });
-
-        /* =========================================================
-           CENTER HERO
-        ========================================================= */
-
-        VBox hero = new VBox(18);
-        hero.setAlignment(Pos.CENTER);
-        hero.getStyleClass().add("hero");
-
-        HBox versionRow = new HBox(0);
-        versionRow.setAlignment(Pos.CENTER);
-
-        Label version =
-                new Label("v1.0.0");
-
-        version.getStyleClass()
-                .add("version");
-
-        Label beta =
-                new Label("BETA");
-
-        beta.getStyleClass()
-                .add("beta");
-
-        versionRow.getChildren().addAll(
-                version,
-                beta
-        );
-
-        Label heroLogo =
-                new Label("M");
-
-        heroLogo.getStyleClass()
-                .add("hero-logo");
-
-        Label title =
-                new Label("MINION");
-
-        title.getStyleClass()
-                .add("title");
-
-        Label subtitle =
-                new Label(
-                        "UNIVERSAL RECOVERY ENGINE"
-                );
-
-        subtitle.getStyleClass()
-                .add("subtitle");
-
-        Region divider =
-                new Region();
-
-        divider.getStyleClass()
-                .add("divider");
-
-        Label tagline =
-                new Label(
-                        "RECOVER WHAT WAS THOUGHT LOST."
-                );
-
-        tagline.getStyleClass()
-                .add("tagline");
-
-        /* =========================================================
-           FEATURE CARDS
-        ========================================================= */
-
-        HBox cards = new HBox(18);
-        cards.setAlignment(Pos.CENTER);
-
-        VBox fatCard =
-                createCard(
-                        "◉",
-                        "FAT32",
-                        "Scan & Recover"
-                );
-
-        VBox ntfsCard =
-                createCard(
-                        "▦",
-                        "NTFS",
-                        "Deep Analysis"
-                );
-
-        VBox predictionCard =
-                createCard(
-                        "✦",
-                        "AI Prediction",
-                        "Recovery Intelligence"
-                );
-
-        cards.getChildren().addAll(
-                fatCard,
-                ntfsCard,
-                predictionCard
-        );
-
-        /* =========================================================
-           START BUTTON
-        ========================================================= */
-
-        Button startButton =
-                new Button(
-                        "➜   BEGIN RECOVERY"
-                );
-
-        startButton
+        layout
                 .getStyleClass()
-                .add("start-button");
+                .add("layout");
 
-        hero.getChildren().addAll(
-                versionRow,
-                heroLogo,
-                title,
-                subtitle,
-                divider,
-                tagline,
-                cards,
-                startButton
-        );
+        /*
+         * Create application sections.
+         */
+        HBox topBar =
+                createTopBar(stage);
 
-        /* =========================================================
-           BOTTOM BAR
-        ========================================================= */
+        homePage =
+                createHomePage(stage);
 
-        HBox bottomBar = new HBox();
-        bottomBar.getStyleClass()
-                .add("bottom-bar");
-
-        bottomBar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        Label pulse =
-                new Label("⌁");
-
-        pulse.getStyleClass()
-                .add("pulse");
-
-        Label footerLeft =
-                new Label(
-                        "FAST   •   SECURE   •   CROSS-PLATFORM"
-                );
-
-        footerLeft.getStyleClass()
-                .add("footer-text");
-
-        Region bottomSpacer =
-                new Region();
-
-        HBox.setHgrow(
-                bottomSpacer,
-                Priority.ALWAYS
-        );
-
-        Label footerRight =
-                new Label(
-                        "MINION URE   |   DATA LIVES LONGER."
-                );
-
-        footerRight.getStyleClass()
-                .add("footer-text");
-
-        bottomBar.getChildren().addAll(
-                pulse,
-                footerLeft,
-                bottomSpacer,
-                footerRight
-        );
+        HBox bottomBar =
+                createBottomBar();
 
         layout.setTop(topBar);
-        layout.setCenter(hero);
+
+        layout.setCenter(homePage);
+
         layout.setBottom(bottomBar);
 
-        /* =========================================================
-           CURSOR
-        ========================================================= */
+        root.getChildren().add(layout);
 
-        Circle cursorRing =
-                new Circle(8);
-
-        cursorRing.setFill(
-                Color.TRANSPARENT
-        );
-
-        cursorRing.setStroke(
-                Color.web("#E95420")
-        );
-
-        cursorRing.setStrokeWidth(
-                1.4
-        );
-
-        cursorRing.setMouseTransparent(
-                true
-        );
-
-        root.getChildren().addAll(
-                layout,
-                cursorRing
-        );
+        /*
+         * =====================================================
+         * SCENE
+         * =====================================================
+         */
 
         Scene scene =
                 new Scene(
@@ -417,7 +115,12 @@ public class Main extends Application {
                         700
                 );
 
+        scene.setFill(
+                Color.TRANSPARENT
+        );
+
         scene.getStylesheets().add(
+
                 getClass()
                         .getResource(
                                 "/css/main.css"
@@ -425,281 +128,1316 @@ public class Main extends Application {
                         .toExternalForm()
         );
 
-        scene.setCursor(
-                Cursor.DEFAULT
+        /*
+         * Magnetic cursor.
+         */
+        createMagneticCursor(
+                scene,
+                root
         );
 
-        cards.maxWidthProperty().bind(
-                scene.widthProperty()
-                        .multiply(0.78)
-        );
-
-        hero.maxWidthProperty().bind(
-                scene.widthProperty()
-                        .multiply(0.90)
-        );
-
-        /* =========================================================
-           MOUSE TRACKING
-        ========================================================= */
-
-        scene.addEventFilter(
-                MouseEvent.MOUSE_MOVED,
-                event -> {
-
-                    mouseX =
-                            event.getSceneX();
-
-                    mouseY =
-                            event.getSceneY();
-                }
-        );
-
-        scene.addEventFilter(
-                MouseEvent.MOUSE_DRAGGED,
-                event -> {
-
-                    mouseX =
-                            event.getSceneX();
-
-                    mouseY =
-                            event.getSceneY();
-                }
-        );
-
-        AnimationTimer cursorAnimation =
-                new AnimationTimer() {
-
-                    @Override
-                    public void handle(long now) {
-
-                        double followSpeed =
-                                0.30;
-
-                        cursorX +=
-                                (mouseX - cursorX)
-                                        * followSpeed;
-
-                        cursorY +=
-                                (mouseY - cursorY)
-                                        * followSpeed;
-
-                        cursorRadius +=
-                                (
-                                        targetRadius
-                                                - cursorRadius
-                                )
-                                        * 0.20;
-
-                        cursorRing.setRadius(
-                                cursorRadius
-                        );
-
-                        cursorRing.setTranslateX(
-                                cursorX
-                                        - scene.getWidth()
-                                        / 2
-                        );
-
-                        cursorRing.setTranslateY(
-                                cursorY
-                                        - scene.getHeight()
-                                        / 2
-                        );
-                    }
-                };
-
-        cursorAnimation.start();
-
-        addCursorEffect(
-                startButton,
-                22
-        );
-
-        addCursorEffect(
-                fatCard,
-                14
-        );
-
-        addCursorEffect(
-                ntfsCard,
-                14
-        );
-
-        addCursorEffect(
-                predictionCard,
-                14
-        );
-
-        addCursorEffect(
-                recoverNav,
-                12
-        );
-
-        addCursorEffect(
-                analyseNav,
-                12
-        );
-
-        addCursorEffect(
-                predictNav,
-                12
-        );
-
-        addCursorEffect(
-                minimizeButton,
-                12
-        );
-
-        addCursorEffect(
-                maximizeButton,
-                12
-        );
-
-        addCursorEffect(
-                closeButton,
-                12
-        );
-
-        /* =========================================================
-           STARTUP ANIMATION
-        ========================================================= */
-
-        hero.setOpacity(0);
-
-        FadeTransition fade =
-                new FadeTransition(
-                        Duration.millis(300),
-                        hero
-                );
-
-        fade.setFromValue(0);
-        fade.setToValue(1);
-        fade.play();
-
-        /* =========================================================
-           WINDOW
-        ========================================================= */
-
-        stage.setTitle("MINION URE");
         stage.setScene(scene);
 
+        /*
+         * Minimum window size.
+         */
         stage.setMinWidth(850);
+
         stage.setMinHeight(600);
 
         stage.show();
-
-        mouseX =
-                scene.getWidth() / 2;
-
-        mouseY =
-                scene.getHeight() / 2;
-
-        cursorX = mouseX;
-        cursorY = mouseY;
     }
 
-    private VBox createCard(
-            String icon,
-            String title,
-            String subtitle
+    /*
+     * =========================================================
+     * TOP BAR
+     * =========================================================
+     */
+
+    private HBox createTopBar(
+            Stage stage
     ) {
 
-        Label iconLabel =
-                new Label(icon);
+        HBox topBar =
+                new HBox(12);
 
-        iconLabel.getStyleClass()
-                .add("card-icon");
+        topBar
+                .getStyleClass()
+                .add("top-bar");
 
-        Label titleLabel =
-                new Label(title);
-
-        titleLabel.getStyleClass()
-                .add("card-title");
-
-        Label subtitleLabel =
-                new Label(subtitle);
-
-        subtitleLabel.getStyleClass()
-                .add("card-subtitle");
-
-        VBox text =
-                new VBox(
-                        4,
-                        titleLabel,
-                        subtitleLabel
-                );
-
-        HBox row =
-                new HBox(
-                        16,
-                        iconLabel,
-                        text
-                );
-
-        row.setAlignment(
+        topBar.setAlignment(
                 Pos.CENTER_LEFT
         );
 
-        VBox card =
-                new VBox(row);
+        /*
+         * =====================================================
+         * BRAND
+         * =====================================================
+         */
 
-        card.getStyleClass()
-                .add("feature-card");
+        HBox brandArea =
+                new HBox(9);
 
-        card.setAlignment(
+        brandArea.setAlignment(
                 Pos.CENTER_LEFT
+        );
+
+        Label miniLogo =
+                new Label("M");
+
+        miniLogo
+                .getStyleClass()
+                .add("mini-logo");
+
+        VBox brandText =
+                new VBox(-2);
+
+        Label brand =
+                new Label(
+                        "MINION URE"
+                );
+
+        brand
+                .getStyleClass()
+                .add("brand");
+
+        Label brandSubtitle =
+                new Label(
+                        "UNIVERSAL RECOVERY ENGINE"
+                );
+
+        brandSubtitle
+                .getStyleClass()
+                .add(
+                        "brand-subtitle"
+                );
+
+        brandText
+                .getChildren()
+                .addAll(
+                        brand,
+                        brandSubtitle
+                );
+
+        brandArea
+                .getChildren()
+                .addAll(
+                        miniLogo,
+                        brandText
+                );
+
+        /*
+         * =====================================================
+         * SPACERS
+         * =====================================================
+         */
+
+        javafx.scene.layout.Region leftSpacer =
+                new javafx.scene.layout.Region();
+
+        javafx.scene.layout.Region rightSpacer =
+                new javafx.scene.layout.Region();
+
+        HBox.setHgrow(
+                leftSpacer,
+                Priority.ALWAYS
         );
 
         HBox.setHgrow(
-                card,
+                rightSpacer,
                 Priority.ALWAYS
         );
+
+        /*
+         * =====================================================
+         * NAVIGATION
+         * =====================================================
+         */
+
+        HBox navigation =
+                new HBox(7);
+
+        navigation.setAlignment(
+                Pos.CENTER
+        );
+
+        Label navLabel =
+                new Label(
+                        "RECOVERY"
+                );
+
+        navLabel
+                .getStyleClass()
+                .add(
+                        "nav-label"
+                );
+
+        Label navArrow =
+                new Label("›");
+
+        navArrow
+                .getStyleClass()
+                .add(
+                        "nav-arrow"
+                );
+
+        navigation
+                .getChildren()
+                .addAll(
+                        navLabel,
+                        navArrow
+                );
+
+        /*
+         * =====================================================
+         * WINDOW CONTROLS
+         * =====================================================
+         */
+
+        HBox windowControls =
+                new HBox(3);
+
+        windowControls.setAlignment(
+                Pos.CENTER_RIGHT
+        );
+
+        Button minimizeButton =
+                new Button("—");
+
+        maximizeButton =
+                new Button("□");
+
+        Button closeButton =
+                new Button("×");
+
+        /*
+         * CSS classes.
+         */
+        minimizeButton
+                .getStyleClass()
+                .addAll(
+                        "window-button",
+                        "minimize-button"
+                );
+
+        maximizeButton
+                .getStyleClass()
+                .addAll(
+                        "window-button",
+                        "maximize-button"
+                );
+
+        closeButton
+                .getStyleClass()
+                .addAll(
+                        "window-button",
+                        "close-button"
+                );
+
+        /*
+         * Large hitboxes.
+         */
+        configureWindowButton(
+                minimizeButton
+        );
+
+        configureWindowButton(
+                maximizeButton
+        );
+
+        configureWindowButton(
+                closeButton
+        );
+
+        /*
+         * =====================================================
+         * MINIMIZE
+         * =====================================================
+         */
+
+        minimizeButton.setOnAction(
+                event -> {
+
+                    event.consume();
+
+                    stage.setIconified(true);
+                }
+        );
+
+        /*
+         * =====================================================
+         * MAXIMIZE
+         * =====================================================
+         */
+
+        maximizeButton.setOnAction(
+                event -> {
+
+                    event.consume();
+
+                    toggleManualMaximize(stage);
+                }
+        );
+
+        /*
+         * =====================================================
+         * CLOSE
+         * =====================================================
+         */
+
+        closeButton.setOnAction(
+                event -> {
+
+                    event.consume();
+
+                    stage.close();
+                }
+        );
+
+        windowControls
+                .getChildren()
+                .addAll(
+                        minimizeButton,
+                        maximizeButton,
+                        closeButton
+                );
+
+        /*
+         * Add everything.
+         */
+        topBar
+                .getChildren()
+                .addAll(
+                        brandArea,
+                        leftSpacer,
+                        navigation,
+                        rightSpacer,
+                        windowControls
+                );
+
+        /*
+         * =====================================================
+         * WINDOW DRAGGING
+         * =====================================================
+         */
+
+        topBar.addEventFilter(
+                MouseEvent.MOUSE_PRESSED,
+                event -> {
+
+                    if (
+                            isWindowControl(event)
+                    ) {
+
+                        return;
+                    }
+
+                    dragOffsetX =
+                            event.getScreenX()
+                                    - stage.getX();
+
+                    dragOffsetY =
+                            event.getScreenY()
+                                    - stage.getY();
+                }
+        );
+
+        topBar.addEventFilter(
+                MouseEvent.MOUSE_DRAGGED,
+                event -> {
+
+                    if (
+                            isWindowControl(event)
+                    ) {
+
+                        return;
+                    }
+
+                    /*
+                     * Dragging a maximized window
+                     * automatically restores it.
+                     */
+                    if (maximized) {
+
+                        double mouseRatio =
+                                event.getSceneX()
+                                        /
+                                        stage.getWidth();
+
+                        restoreWindow(stage);
+
+                        dragOffsetX =
+                                stage.getWidth()
+                                        *
+                                        mouseRatio;
+
+                        dragOffsetY = 18;
+                    }
+
+                    stage.setX(
+                            event.getScreenX()
+                                    - dragOffsetX
+                    );
+
+                    stage.setY(
+                            event.getScreenY()
+                                    - dragOffsetY
+                    );
+                }
+        );
+
+        /*
+         * Double click title bar:
+         *
+         * maximize / restore.
+         */
+        topBar.setOnMouseClicked(
+                event -> {
+
+                    if (
+                            event.getClickCount() == 2
+                                    &&
+                                    !isWindowControl(event)
+                    ) {
+
+                        toggleManualMaximize(
+                                stage
+                        );
+                    }
+                }
+        );
+
+        return topBar;
+    }
+
+    /*
+     * =========================================================
+     * WINDOW BUTTON SIZE
+     * =========================================================
+     */
+
+    private void configureWindowButton(
+            Button button
+    ) {
+
+        button.setMinSize(
+                44,
+                34
+        );
+
+        button.setPrefSize(
+                44,
+                34
+        );
+
+        button.setMaxSize(
+                44,
+                34
+        );
+
+        button.setFocusTraversable(
+                false
+        );
+    }
+
+    /*
+     * =========================================================
+     * CHECK WINDOW BUTTON
+     * =========================================================
+     */
+
+    private boolean isWindowControl(
+            MouseEvent event
+    ) {
+
+        if (
+                !(event.getTarget()
+                        instanceof Node)
+        ) {
+
+            return false;
+        }
+
+        Node node =
+                (Node)
+                        event.getTarget();
+
+        while (
+                node != null
+        ) {
+
+            if (
+                    node instanceof Button
+            ) {
+
+                Button button =
+                        (Button) node;
+
+                if (
+                        button
+                                .getStyleClass()
+                                .contains(
+                                        "window-button"
+                                )
+                ) {
+
+                    return true;
+                }
+            }
+
+            node =
+                    node.getParent();
+        }
+
+        return false;
+    }
+
+    /*
+     * =========================================================
+     * MANUAL MAXIMIZE
+     * =========================================================
+     *
+     * We don't use stage.setMaximized().
+     *
+     * Manual maximize is more reliable for
+     * undecorated JavaFX windows on Linux.
+     * =========================================================
+     */
+
+    private void toggleManualMaximize(
+            Stage stage
+    ) {
+
+        if (!maximized) {
+
+            maximizeWindow(stage);
+
+        } else {
+
+            restoreWindow(stage);
+        }
+    }
+
+    /*
+     * =========================================================
+     * MAXIMIZE WINDOW
+     * =========================================================
+     */
+
+    private void maximizeWindow(
+            Stage stage
+    ) {
+
+        /*
+         * Save current window position.
+         */
+        restoreX =
+                stage.getX();
+
+        restoreY =
+                stage.getY();
+
+        restoreWidth =
+                stage.getWidth();
+
+        restoreHeight =
+                stage.getHeight();
+
+        /*
+         * Find screen containing window.
+         */
+        Screen screen =
+                getCurrentScreen(stage);
+
+        Rectangle2D bounds =
+                screen.getVisualBounds();
+
+        /*
+         * Resize window manually.
+         */
+        stage.setX(
+                bounds.getMinX()
+        );
+
+        stage.setY(
+                bounds.getMinY()
+        );
+
+        stage.setWidth(
+                bounds.getWidth()
+        );
+
+        stage.setHeight(
+                bounds.getHeight()
+        );
+
+        maximized =
+                true;
+
+        maximizeButton.setText(
+                "❐"
+        );
+    }
+
+    /*
+     * =========================================================
+     * RESTORE WINDOW
+     * =========================================================
+     */
+
+    private void restoreWindow(
+            Stage stage
+    ) {
+
+        stage.setX(
+                restoreX
+        );
+
+        stage.setY(
+                restoreY
+        );
+
+        stage.setWidth(
+                restoreWidth
+        );
+
+        stage.setHeight(
+                restoreHeight
+        );
+
+        maximized =
+                false;
+
+        maximizeButton.setText(
+                "□"
+        );
+    }
+
+    /*
+     * =========================================================
+     * CURRENT SCREEN
+     * =========================================================
+     */
+
+    private Screen getCurrentScreen(
+            Stage stage
+    ) {
+
+        double centerX =
+                stage.getX()
+                        +
+                        stage.getWidth() / 2;
+
+        double centerY =
+                stage.getY()
+                        +
+                        stage.getHeight() / 2;
+
+        for (
+                Screen screen :
+                Screen.getScreens()
+        ) {
+
+            Rectangle2D bounds =
+                    screen.getBounds();
+
+            if (
+                    bounds.contains(
+                            centerX,
+                            centerY
+                    )
+            ) {
+
+                return screen;
+            }
+        }
+
+        return Screen.getPrimary();
+    }
+
+    /*
+     * =========================================================
+     * HOME SCREEN
+     * =========================================================
+     */
+
+    private VBox createHomePage(
+            Stage stage
+    ) {
+
+        VBox hero =
+                new VBox(18);
+
+        hero
+                .getStyleClass()
+                .add(
+                        "hero"
+                );
+
+        hero.setAlignment(
+                Pos.CENTER
+        );
+
+        /*
+         * VERSION
+         */
+        HBox versionArea =
+                new HBox(7);
+
+        versionArea.setAlignment(
+                Pos.CENTER
+        );
+
+        Label version =
+                new Label(
+                        "VERSION 0.1"
+                );
+
+        version
+                .getStyleClass()
+                .add(
+                        "version"
+                );
+
+        Label beta =
+                new Label(
+                        "BETA"
+                );
+
+        beta
+                .getStyleClass()
+                .add(
+                        "beta"
+                );
+
+        versionArea
+                .getChildren()
+                .addAll(
+                        version,
+                        beta
+                );
+
+        /*
+         * LOGO
+         */
+        Label logo =
+                new Label(
+                        "M"
+                );
+
+        logo
+                .getStyleClass()
+                .add(
+                        "hero-logo"
+                );
+
+        /*
+         * TITLE
+         */
+        Label title =
+                new Label(
+                        "MINION"
+                );
+
+        title
+                .getStyleClass()
+                .add(
+                        "title"
+                );
+
+        Label subtitle =
+                new Label(
+                        "UNIVERSAL RECOVERY ENGINE"
+                );
+
+        subtitle
+                .getStyleClass()
+                .add(
+                        "subtitle"
+                );
+
+        /*
+         * DIVIDER
+         */
+        javafx.scene.layout.Region divider =
+                new javafx.scene.layout.Region();
+
+        divider
+                .getStyleClass()
+                .add(
+                        "divider"
+                );
+
+        divider.setMaxWidth(
+                370
+        );
+
+        /*
+         * TAGLINE
+         */
+        Label tagline =
+                new Label(
+                        "Recover what matters. Analyse what remains."
+                );
+
+        tagline
+                .getStyleClass()
+                .add(
+                        "tagline"
+                );
+
+        /*
+         * FEATURE CARDS
+         */
+        HBox featureCards =
+                new HBox(14);
+
+        featureCards.setAlignment(
+                Pos.CENTER
+        );
+
+        featureCards
+                .getChildren()
+                .addAll(
+
+                        createFeatureCard(
+                                "◫",
+                                "FAT32",
+                                "Deleted file recovery"
+                        ),
+
+                        createFeatureCard(
+                                "▤",
+                                "NTFS",
+                                "Filesystem analysis"
+                        ),
+
+                        createFeatureCard(
+                                "◉",
+                                "AI PREDICTION",
+                                "Recovery confidence"
+                        )
+                );
+
+        /*
+         * START BUTTON
+         */
+        Button startButton =
+                new Button(
+                        "➜   BEGIN RECOVERY"
+                );
+
+        startButton
+                .getStyleClass()
+                .add(
+                        "start-button"
+                );
+
+        startButton.setFocusTraversable(
+                false
+        );
+
+        startButton.setOnAction(
+                event -> {
+
+                    DriveSelectionView driveView =
+                            new DriveSelectionView(
+
+                                    stage,
+
+                                    () ->
+                                            layout.setCenter(
+                                                    homePage
+                                            ),
+
+                                    selectedSource ->
+                                            openScanner(
+                                                    selectedSource
+                                            )
+                            );
+
+                    layout.setCenter(
+                            driveView
+                    );
+                }
+        );
+
+        hero
+                .getChildren()
+                .addAll(
+                        versionArea,
+                        logo,
+                        title,
+                        subtitle,
+                        divider,
+                        tagline,
+                        featureCards,
+                        startButton
+                );
+
+        return hero;
+    }
+
+    /*
+     * =========================================================
+     * FEATURE CARD
+     * =========================================================
+     */
+
+    private VBox createFeatureCard(
+            String iconText,
+            String titleText,
+            String subtitleText
+    ) {
+
+        VBox card =
+                new VBox(6);
+
+        card
+                .getStyleClass()
+                .add(
+                        "feature-card"
+                );
+
+        card.setAlignment(
+                Pos.CENTER
+        );
+
+        Label icon =
+                new Label(
+                        iconText
+                );
+
+        icon
+                .getStyleClass()
+                .add(
+                        "card-icon"
+                );
+
+        Label title =
+                new Label(
+                        titleText
+                );
+
+        title
+                .getStyleClass()
+                .add(
+                        "card-title"
+                );
+
+        Label subtitle =
+                new Label(
+                        subtitleText
+                );
+
+        subtitle
+                .getStyleClass()
+                .add(
+                        "card-subtitle"
+                );
+
+        card
+                .getChildren()
+                .addAll(
+                        icon,
+                        title,
+                        subtitle
+                );
 
         return card;
     }
 
-    private Label createNavLabel(
-            String text
+    /*
+     * =========================================================
+     * MODULE 3 PLACEHOLDER
+     * =========================================================
+     */
+
+    private void openScanner(
+            File source
     ) {
 
-        Label label =
-                new Label(text);
+        System.out.println(
+                "Selected recovery source: "
+                        +
+                        source.getAbsolutePath()
+        );
 
-        label.getStyleClass()
-                .add("nav-label");
-
-        return label;
+        /*
+         * Module 3 Scanner GUI
+         * will be connected here.
+         */
     }
 
-    private Label createArrow() {
+    /*
+     * =========================================================
+     * BOTTOM BAR
+     * =========================================================
+     */
 
-        Label arrow =
-                new Label("›");
+    private HBox createBottomBar() {
 
-        arrow.getStyleClass()
-                .add("nav-arrow");
+        HBox bottomBar =
+                new HBox(9);
 
-        return arrow;
+        bottomBar
+                .getStyleClass()
+                .add(
+                        "bottom-bar"
+                );
+
+        bottomBar.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        Label pulse =
+                new Label(
+                        "●"
+                );
+
+        pulse
+                .getStyleClass()
+                .add(
+                        "pulse"
+                );
+
+        Label status =
+                new Label(
+                        "SYSTEM READY"
+                );
+
+        status
+                .getStyleClass()
+                .add(
+                        "footer-text"
+                );
+
+        javafx.scene.layout.Region spacer =
+                new javafx.scene.layout.Region();
+
+        HBox.setHgrow(
+                spacer,
+                Priority.ALWAYS
+        );
+
+        Label footer =
+                new Label(
+                        "MINION URE  •  READ-ONLY RECOVERY ENVIRONMENT"
+                );
+
+        footer
+                .getStyleClass()
+                .add(
+                        "footer-text"
+                );
+
+        bottomBar
+                .getChildren()
+                .addAll(
+                        pulse,
+                        status,
+                        spacer,
+                        footer
+                );
+
+        return bottomBar;
     }
 
-    private void addCursorEffect(
-            javafx.scene.Node node,
-            double radius
+    /*
+     * =========================================================
+     * MAGNETIC CURSOR
+     * =========================================================
+     *
+     * Fast version:
+     *
+     * No ScaleTransition.
+     * No FadeTransition.
+     * No animation queue.
+     *
+     * Cursor follows mouse directly.
+     * =========================================================
+     */
+
+    private void createMagneticCursor(
+            Scene scene,
+            StackPane root
     ) {
 
-        node.setOnMouseEntered(
-                event ->
-                        targetRadius =
-                                radius
+        /*
+         * Outer magnetic ring.
+         */
+        Circle ring =
+                new Circle(
+                        9
+                );
+
+        ring.setFill(
+                Color.TRANSPARENT
         );
 
-        node.setOnMouseExited(
+        ring.setStroke(
+                Color.rgb(
+                        233,
+                        84,
+                        32,
+                        0.92
+                )
+        );
+
+        ring.setStrokeWidth(
+                1.25
+        );
+
+        /*
+         * Center dot.
+         */
+        Circle dot =
+                new Circle(
+                        2.4
+                );
+
+        dot.setFill(
+                Color.web(
+                        "#FF7948"
+                )
+        );
+
+        /*
+         * Cursor container.
+         */
+        StackPane cursor =
+                new StackPane(
+                        ring,
+                        dot
+                );
+
+        cursor.setManaged(
+                false
+        );
+
+        cursor.setMouseTransparent(
+                true
+        );
+
+        ring.setMouseTransparent(
+                true
+        );
+
+        dot.setMouseTransparent(
+                true
+        );
+
+        cursor.setVisible(
+                false
+        );
+
+        root
+                .getChildren()
+                .add(
+                        cursor
+                );
+
+        /*
+         * Hide operating-system cursor.
+         */
+        scene.setCursor(
+                Cursor.NONE
+        );
+
+        /*
+         * Mouse enters window.
+         */
+        scene.addEventFilter(
+                MouseEvent.MOUSE_ENTERED,
                 event ->
-                        targetRadius =
-                                8
+                        cursor.setVisible(
+                                true
+                        )
+        );
+
+        /*
+         * Mouse exits.
+         */
+        scene.addEventFilter(
+                MouseEvent.MOUSE_EXITED,
+                event ->
+                        cursor.setVisible(
+                                false
+                        )
+        );
+
+        /*
+         * Direct movement = fastest response.
+         */
+        scene.addEventFilter(
+                MouseEvent.MOUSE_MOVED,
+                event -> {
+
+                    cursor.relocate(
+
+                            event.getSceneX()
+                                    - 9,
+
+                            event.getSceneY()
+                                    - 9
+                    );
+
+                    updateMagneticCursor(
+                            event,
+                            ring,
+                            dot
+                    );
+                }
+        );
+
+        /*
+         * Follow while dragging.
+         */
+        scene.addEventFilter(
+                MouseEvent.MOUSE_DRAGGED,
+                event -> {
+
+                    cursor.relocate(
+
+                            event.getSceneX()
+                                    - 9,
+
+                            event.getSceneY()
+                                    - 9
+                    );
+                }
+        );
+
+        /*
+         * Instant click feedback.
+         */
+        scene.addEventFilter(
+                MouseEvent.MOUSE_PRESSED,
+                event -> {
+
+                    ring.setRadius(
+                            6.5
+                    );
+
+                    dot.setRadius(
+                            3.0
+                    );
+                }
+        );
+
+        scene.addEventFilter(
+                MouseEvent.MOUSE_RELEASED,
+                event -> {
+
+                    ring.setRadius(
+                            9
+                    );
+
+                    dot.setRadius(
+                            2.4
+                    );
+                }
         );
     }
+
+    /*
+     * =========================================================
+     * MAGNETIC CURSOR DETECTION
+     * =========================================================
+     */
+
+    private void updateMagneticCursor(
+            MouseEvent event,
+            Circle ring,
+            Circle dot
+    ) {
+
+        Object target =
+                event.getTarget();
+
+        boolean clickable =
+                false;
+
+        if (
+                target instanceof Node
+        ) {
+
+            Node node =
+                    (Node) target;
+
+            while (
+                    node != null
+            ) {
+
+                if (
+                        node instanceof Button
+                ) {
+
+                    clickable =
+                            true;
+
+                    break;
+                }
+
+                if (
+                        node
+                                .getStyleClass()
+                                .contains(
+                                        "drive-card"
+                                )
+                ) {
+
+                    clickable =
+                            true;
+
+                    break;
+                }
+
+                node =
+                        node.getParent();
+            }
+        }
+
+        /*
+         * Magnetic hover effect.
+         *
+         * Instant, no animation delay.
+         */
+        if (clickable) {
+
+            ring.setRadius(
+                    13
+            );
+
+            ring.setStrokeWidth(
+                    1.5
+            );
+
+            dot.setRadius(
+                    2.8
+            );
+
+        } else {
+
+            ring.setRadius(
+                    9
+            );
+
+            ring.setStrokeWidth(
+                    1.25
+            );
+
+            dot.setRadius(
+                    2.4
+            );
+        }
+    }
+
+    /*
+     * =========================================================
+     * MAIN
+     * =========================================================
+     */
 
     public static void main(
             String[] args
