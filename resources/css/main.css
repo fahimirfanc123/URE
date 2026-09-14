@@ -1253,3 +1253,371 @@
     -fx-text-fill:
         #A9A381;
 }
+
+/* =========================================================
+   MODULE 3 — SCANNING
+========================================================= */
+
+.scan-page {
+    -fx-padding: 28 44 32 44;
+    -fx-spacing: 20;
+    -fx-background-color: transparent;
+}
+
+
+/* =========================================================
+   PAGE TITLE
+========================================================= */
+
+.scan-page-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F8FAFC;
+}
+
+.scan-page-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #B8C2D1;
+}
+
+
+/* =========================================================
+   LIVE STATUS
+========================================================= */
+
+.scan-live {
+    -fx-padding: 6 11 6 11;
+
+    -fx-background-color:
+        rgba(77, 219, 129, 0.14);
+
+    -fx-background-radius: 6;
+
+    -fx-border-color:
+        rgba(77, 219, 129, 0.30);
+
+    -fx-border-radius: 6;
+
+    -fx-text-fill: #63E18F;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+
+/* =========================================================
+   SOURCE PANEL
+========================================================= */
+
+.scan-source-panel {
+    -fx-padding: 18 22 18 22;
+
+    -fx-background-color:
+        rgba(18, 24, 38, 0.96);
+
+    -fx-border-color:
+        rgba(148, 163, 184, 0.22);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.24),
+            12,
+            0.18,
+            0,
+            4
+        );
+}
+
+.scan-small-title {
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #93A4B8;
+}
+
+.scan-source-name {
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #FFFFFF;
+}
+
+.scan-source-path {
+    -fx-font-size: 11px;
+    -fx-text-fill: #AAB7C8;
+}
+
+
+/* =========================================================
+   PROGRESS PANEL
+========================================================= */
+
+.scan-progress-panel {
+    -fx-padding: 24;
+
+    -fx-background-color:
+        rgba(18, 24, 38, 0.98);
+
+    -fx-border-color:
+        rgba(233, 84, 32, 0.35);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.30),
+            16,
+            0.20,
+            0,
+            5
+        );
+}
+
+.scan-status {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #F1F5F9;
+}
+
+.scan-percent {
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FF7A45;
+}
+
+
+/* =========================================================
+   PROFESSIONAL PROGRESS BAR
+========================================================= */
+
+.scan-progress-bar {
+    -fx-pref-height: 11px;
+    -fx-min-height: 11px;
+    -fx-max-height: 11px;
+}
+
+.scan-progress-bar > .track {
+    -fx-background-color:
+        rgba(255,255,255,0.08);
+
+    -fx-background-radius: 10;
+
+    -fx-border-color:
+        rgba(255,255,255,0.05);
+
+    -fx-border-radius: 10;
+}
+
+.scan-progress-bar > .bar {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #6A1B4D,
+            #B33A3A,
+            #E95420,
+            #FF7A45
+        );
+
+    -fx-background-radius: 10;
+
+    -fx-background-insets: 0;
+}
+
+
+/* =========================================================
+   CURRENT SECTOR
+========================================================= */
+
+.scan-detail-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #9DABBC;
+}
+
+.scan-detail-value {
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #E2E8F0;
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.scan-stat-card {
+    -fx-padding: 18 17 18 17;
+
+    -fx-background-color:
+        rgba(20, 27, 42, 0.96);
+
+    -fx-border-color:
+        rgba(148, 163, 184, 0.16);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.20),
+            8,
+            0.12,
+            0,
+            3
+        );
+}
+
+.scan-stat-card:hover {
+    -fx-background-color:
+        rgba(35, 42, 58, 0.98);
+
+    -fx-border-color:
+        rgba(233,84,32,0.36);
+}
+
+.scan-stat-title {
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #A2AFBF;
+}
+
+.scan-stat-value {
+    -fx-font-size: 21px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+
+/* =========================================================
+   INFO BAR
+========================================================= */
+
+.scan-information {
+    -fx-padding: 12 16 12 16;
+
+    -fx-background-color:
+        rgba(77, 219, 129, 0.07);
+
+    -fx-border-color:
+        rgba(77, 219, 129, 0.20);
+
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 600;
+
+    -fx-text-fill: #A9DAB9;
+}
+
+
+/* =========================================================
+   CANCEL
+========================================================= */
+
+.scan-cancel-button {
+    -fx-padding: 11 18 11 18;
+
+    -fx-background-color:
+        rgba(255,255,255,0.055);
+
+    -fx-border-color:
+        rgba(255,255,255,0.12);
+
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-text-fill: #D1D9E4;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+
+    -fx-cursor: none;
+}
+
+.scan-cancel-button:hover {
+    -fx-background-color:
+        rgba(220, 60, 60, 0.16);
+
+    -fx-border-color:
+        rgba(235, 90, 90, 0.50);
+
+    -fx-text-fill: #FF9B9B;
+}
+
+
+/* =========================================================
+   RESULTS
+========================================================= */
+
+.scan-results-button {
+    -fx-padding: 12 22 12 22;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #6A1B4D,
+            #8A2E55,
+            #E95420
+        );
+
+    -fx-background-radius: 8;
+
+    -fx-border-radius: 8;
+
+    -fx-border-color:
+        rgba(255, 122, 69, 0.50);
+
+    -fx-text-fill: #FFFFFF;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+
+    -fx-cursor: none;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(233,84,32,0.22),
+            8,
+            0.20,
+            0,
+            2
+        );
+}
+
+.scan-results-button:hover {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #7C2559,
+            #A3395F,
+            #FF6A2D
+        );
+
+    -fx-border-color: #FF7A45;
+}
+
+.scan-results-button:disabled {
+    -fx-opacity: 0.38;
+}
+
+
+/* =========================================================
+   ERRORS
+========================================================= */
+
+.scan-error {
+    -fx-text-fill: #FF8A8A;
+}

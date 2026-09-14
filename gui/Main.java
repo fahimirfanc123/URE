@@ -57,8 +57,20 @@ public class Main extends Application {
 
     private Button maximizeButton;
 
+    /*
+     * MODULE 3:
+     * Reference to the main application stage.
+     */
+    private Stage stageReference;
+
     @Override
     public void start(Stage stage) {
+
+        /*
+         * MODULE 3:
+         * Save the application stage for GUI navigation.
+         */
+        stageReference = stage;
 
         /*
          * Undecorated window because MINION
@@ -596,12 +608,6 @@ public class Main extends Application {
      * =========================================================
      * MANUAL MAXIMIZE
      * =========================================================
-     *
-     * We don't use stage.setMaximized().
-     *
-     * Manual maximize is more reliable for
-     * undecorated JavaFX windows on Linux.
-     * =========================================================
      */
 
     private void toggleManualMaximize(
@@ -628,9 +634,6 @@ public class Main extends Application {
             Stage stage
     ) {
 
-        /*
-         * Save current window position.
-         */
         restoreX =
                 stage.getX();
 
@@ -643,18 +646,12 @@ public class Main extends Application {
         restoreHeight =
                 stage.getHeight();
 
-        /*
-         * Find screen containing window.
-         */
         Screen screen =
                 getCurrentScreen(stage);
 
         Rectangle2D bounds =
                 screen.getVisualBounds();
 
-        /*
-         * Resize window manually.
-         */
         stage.setX(
                 bounds.getMinX()
         );
@@ -1049,7 +1046,7 @@ public class Main extends Application {
 
     /*
      * =========================================================
-     * MODULE 3 PLACEHOLDER
+     * MODULE 3 — SCANNER
      * =========================================================
      */
 
@@ -1058,15 +1055,66 @@ public class Main extends Application {
     ) {
 
         System.out.println(
-                "Selected recovery source: "
+                "Starting scan: "
                         +
                         source.getAbsolutePath()
         );
 
-        /*
-         * Module 3 Scanner GUI
-         * will be connected here.
-         */
+        ScanView scanView =
+                new ScanView(
+
+                        source,
+
+                        /*
+                         * Back to source selection.
+                         */
+                        () -> {
+
+                            DriveSelectionView driveView =
+                                    new DriveSelectionView(
+
+                                            stageReference,
+
+                                            () ->
+                                                    layout.setCenter(
+                                                            homePage
+                                                    ),
+
+                                            selectedSource ->
+                                                    openScanner(
+                                                            selectedSource
+                                                    )
+                                    );
+
+                            layout.setCenter(
+                                    driveView
+                            );
+                        },
+
+                        /*
+                         * Scan finished.
+                         */
+                        summary -> {
+
+                            System.out.println(
+                                    "=== SCAN COMPLETE ==="
+                            );
+
+                            System.out.println(
+                                    summary
+                            );
+
+                            /*
+                             * MODULE 4:
+                             * Recovery Results screen
+                             * will connect here.
+                             */
+                        }
+                );
+
+        layout.setCenter(
+                scanView
+        );
     }
 
     /*
@@ -1147,15 +1195,6 @@ public class Main extends Application {
      * =========================================================
      * MAGNETIC CURSOR
      * =========================================================
-     *
-     * Fast version:
-     *
-     * No ScaleTransition.
-     * No FadeTransition.
-     * No animation queue.
-     *
-     * Cursor follows mouse directly.
-     * =========================================================
      */
 
     private void createMagneticCursor(
@@ -1163,9 +1202,6 @@ public class Main extends Application {
             StackPane root
     ) {
 
-        /*
-         * Outer magnetic ring.
-         */
         Circle ring =
                 new Circle(
                         9
@@ -1188,9 +1224,6 @@ public class Main extends Application {
                 1.25
         );
 
-        /*
-         * Center dot.
-         */
         Circle dot =
                 new Circle(
                         2.4
@@ -1202,9 +1235,6 @@ public class Main extends Application {
                 )
         );
 
-        /*
-         * Cursor container.
-         */
         StackPane cursor =
                 new StackPane(
                         ring,
@@ -1237,16 +1267,10 @@ public class Main extends Application {
                         cursor
                 );
 
-        /*
-         * Hide operating-system cursor.
-         */
         scene.setCursor(
                 Cursor.NONE
         );
 
-        /*
-         * Mouse enters window.
-         */
         scene.addEventFilter(
                 MouseEvent.MOUSE_ENTERED,
                 event ->
@@ -1255,9 +1279,6 @@ public class Main extends Application {
                         )
         );
 
-        /*
-         * Mouse exits.
-         */
         scene.addEventFilter(
                 MouseEvent.MOUSE_EXITED,
                 event ->
@@ -1266,9 +1287,6 @@ public class Main extends Application {
                         )
         );
 
-        /*
-         * Direct movement = fastest response.
-         */
         scene.addEventFilter(
                 MouseEvent.MOUSE_MOVED,
                 event -> {
@@ -1290,9 +1308,6 @@ public class Main extends Application {
                 }
         );
 
-        /*
-         * Follow while dragging.
-         */
         scene.addEventFilter(
                 MouseEvent.MOUSE_DRAGGED,
                 event -> {
@@ -1308,9 +1323,6 @@ public class Main extends Application {
                 }
         );
 
-        /*
-         * Instant click feedback.
-         */
         scene.addEventFilter(
                 MouseEvent.MOUSE_PRESSED,
                 event -> {
@@ -1398,11 +1410,6 @@ public class Main extends Application {
             }
         }
 
-        /*
-         * Magnetic hover effect.
-         *
-         * Instant, no animation delay.
-         */
         if (clickable) {
 
             ring.setRadius(
