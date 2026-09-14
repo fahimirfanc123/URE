@@ -1138,28 +1138,80 @@ topBar.setMaxWidth(Double.MAX_VALUE);
                                         summary.getSource()
                                 ),
 
-                        () -> {
-
-                            System.out.println(
-                                    "Recovery requested for: "
-                                            +
-                                            summary
-                                                    .getSource()
-                                                    .getAbsolutePath()
-                            );
-
-                            /*
-                             * MODULE 5:
-                             * Recovery analysis screen
-                             * connects here.
-                             */
-                        }
+                        () ->
+                                openRecoveryAnalysis(
+                                        summary
+                                )
                 );
 
         layout.setCenter(
                 resultsView
         );
     }
+
+    /*
+     * =========================================================
+     * MODULE 5 — RECOVERY ANALYSIS
+     * =========================================================
+     */
+
+    private void openRecoveryAnalysis(
+            ScanView.ScanSummary summary
+    ) {
+
+        RecoveryAnalysisView recoveryView =
+                new RecoveryAnalysisView(
+
+                        summary.getSource(),
+
+                        () ->
+                                openResults(
+                                        summary
+                                ),
+
+                        recoveryResult ->
+                         openRecoveryMode(
+                          summary,
+                         recoveryResult
+                                         )
+                              );
+
+        layout.setCenter(
+                recoveryView
+        );
+    }
+
+/*
+ * =========================================================
+ * MODULE 6 — RECOVERY MODE
+ * =========================================================
+ */
+
+private void openRecoveryMode(
+        ScanView.ScanSummary summary,
+        common.model.RecoveryResult recoveryResult
+) {
+
+    RecoveryModeView recoveryModeView =
+            new RecoveryModeView(
+
+                    stageReference,
+
+                    summary.getSource(),
+
+                    recoveryResult,
+
+                    () ->
+                            openRecoveryAnalysis(
+                                    summary
+                            )
+            );
+
+
+    layout.setCenter(
+            recoveryModeView
+    );
+}
 
     /*
      * =========================================================
