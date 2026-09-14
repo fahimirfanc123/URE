@@ -171,15 +171,28 @@ public class Main extends Application {
     ) {
 
         HBox topBar =
-                new HBox(12);
+        new HBox(12);
 
-        topBar
-                .getStyleClass()
-                .add("top-bar");
+topBar
+        .getStyleClass()
+        .add("top-bar");
 
-        topBar.setAlignment(
-                Pos.CENTER_LEFT
-        );
+topBar.setAlignment(
+        Pos.CENTER_LEFT
+);
+
+/*
+ * Keep the custom title bar fixed and stable
+ * when switching between application screens.
+ */
+topBar.setMinHeight(54);
+topBar.setPrefHeight(54);
+topBar.setMaxHeight(54);
+
+topBar.setMinWidth(0);
+topBar.setMaxWidth(Double.MAX_VALUE);
+
+        
 
         /*
          * =====================================================

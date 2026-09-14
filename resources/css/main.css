@@ -72,6 +72,12 @@
 
     -fx-border-width:
         0 0 1 0;
+
+    -fx-min-height: 54px;
+
+    -fx-pref-height: 54px;
+
+    -fx-max-height: 54px;    
 }
 
 

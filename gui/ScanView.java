@@ -2,7 +2,7 @@ package gui;
 
 import core.disk.SectorReader;
 import core.scan.DiskScanner;
-
+import gui.ScanView.ScanSummary;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
@@ -66,6 +66,14 @@ public class ScanView extends VBox {
             Runnable onBack,
             Consumer<ScanSummary> onComplete
     ) {
+        setMinWidth(0);
+        setMinHeight(0);
+
+        setPrefWidth(Region.USE_COMPUTED_SIZE);
+        setPrefHeight(Region.USE_COMPUTED_SIZE);
+
+        setMaxWidth(Double.MAX_VALUE);
+        setMaxHeight(Double.MAX_VALUE);
 
         this.source = source;
         this.onBack = onBack;
@@ -748,7 +756,11 @@ public class ScanView extends VBox {
                         );
 
                         cancelButton.setText(
-                                "DONE"
+                           "EXIT"
+                        );
+
+                        cancelButton.setOnAction(
+                          e -> onBack.run()
                         );
 
                         System.out.println(
