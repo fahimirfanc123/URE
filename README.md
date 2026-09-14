@@ -1,250 +1,466 @@
-# Universal Recovery Engine (URE)
+# MINION URE — Universal Recovery Engine
 
-> A modular, cross-platform file recovery engine built in Java for raw disk analysis and data recovery from FAT32 and NTFS filesystems.
+**MINION URE** is a cross-platform file recovery engine built in **Java** with a **JavaFX desktop interface**.
 
-**URE (Universal Recovery Engine)** is a Java-based file recovery system designed to explore and implement the low-level mechanisms behind modern data recovery software.
+The project is designed to analyze storage devices and disk images at the sector and filesystem level, detect recoverable data, and recover deleted files from **FAT32** and **NTFS** filesystems.
 
-Instead of relying only on operating-system file APIs, URE works closer to the storage layer — reading raw sectors, identifying partition structures, scanning disk regions, interpreting filesystem metadata, analyzing recoverable data, and safely writing recovered content to a separate destination.
+> **Current Status:** Active Development — FAT32 and NTFS deleted-file recovery are operational.
 
 ---
 
-## How URE Works
+## Features
 
-URE follows a layered recovery pipeline:
+### Core Recovery Engine
+
+- Raw sector-level disk access
+- Sector scanning and data detection
+- MBR partition validation
+- GPT partition parsing
+- Multithreaded task support
+- Recovery analysis
+- Raw sector recovery
+- Recovery output writer
+
+### FAT32 Recovery
+
+- FAT32 boot sector parsing
+- Filesystem geometry detection
+- Root directory analysis
+- Deleted directory-entry detection
+- Deleted 8.3 filename extraction
+- Starting-cluster detection
+- Deleted file size extraction
+- Deleted file recovery
+- FAT32 recovery GUI
+- Recovery risk / fragmentation analysis foundation
+
+### NTFS Recovery
+
+- NTFS boot sector parsing
+- NTFS filesystem geometry detection
+- Master File Table (`$MFT`) access
+- MFT record reading
+- MFT record parsing
+- Deleted file detection
+- `$FILE_NAME` metadata extraction
+- Resident `$DATA` recovery
+- Non-resident `$DATA` recovery
+- NTFS data-run / runlist parsing
+- Sparse-run handling
+- Deleted-file recovery GUI
+
+### Desktop Interface
+
+- Custom MINION URE application shell
+- Drive / disk-image selection
+- Live scanning
+- Scan progress
+- Scan results
+- Recovery analysis
+- Recovery mode selection
+- Raw recovery
+- FAT32 deleted-file recovery
+- NTFS deleted-file recovery
+- Recovery output selection
+- Custom dark Ubuntu-inspired interface
+
+---
+
+## Recovery Pipeline
 
 ```text
-                                   Disk / Disk Image
-                                          │
-                                          ▼
-                                    SectorReader
-                                          │
-                                          ▼
-                               ┌─────────────────────┐
-                               │      MBRParser      │
-                               │      GPTParser      │
-                               └──────────┬──────────┘
-                                          │
-                                          ▼
-                                    FAT32 / NTFS
-                                Filesystem Analysis
-                                          │
-                                          ▼
-                                     DiskScanner
-                                          │
-                                          ▼
-                                    RecoveryEngine
-                                          │
-                                          ▼
-                                    RecoveryResult
-                                          │
-                                          ▼
-                                    RecoveryWriter
-                                          │
-                                          ▼
-                                    Recovered Data
+              Disk / Disk Image
+                     │
+                     ▼
+               SectorReader
+                     │
+                     ▼
+            Partition Analysis
+              MBR / GPT Parser
+                     │
+                     ▼
+             Filesystem Layer
+               FAT32 / NTFS
+                     │
+                     ▼
+                DiskScanner
+                     │
+                     ▼
+              RecoveryEngine
+                     │
+                     ▼
+             Recovery Analysis
+                     │
+                     ▼
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+   Raw Recovery   FAT32        NTFS
+                  Recovery     Recovery
+        │            │            │
+        └────────────┼────────────┘
+                     │
+                     ▼
+              RecoveryWriter
+                     │
+                     ▼
+              Recovered File
 ```
 
-The graphical interface provides access to this recovery pipeline while keeping low-level recovery logic separated from the presentation layer.
+---
+
+## FAT32 Recovery Pipeline
+
+```text
+FAT32 Disk / Image
+        │
+        ▼
+FAT32BootSector
+        │
+        ▼
+Filesystem Geometry
+        │
+        ▼
+FAT32DeletedFileScanner
+        │
+        ▼
+Deleted Directory Entry
+        │
+        ├── Filename
+        ├── File Size
+        └── Starting Cluster
+        │
+        ▼
+FAT32FileRecovery
+        │
+        ▼
+RecoveryWriter
+        │
+        ▼
+Recovered File
+```
 
 ---
 
-## Core Modules
+## NTFS Recovery Pipeline
 
-### `SectorReader`
-
-Provides low-level access to raw disk sectors using Java random-access I/O.
-
-It converts logical sector addresses into byte offsets and provides sector data to higher-level components.
-
-### `MBRParser`
-
-Analyzes the Master Boot Record located at LBA 0 and validates MBR structures used by legacy partitioned disks.
-
-### `GPTParser`
-
-Handles GUID Partition Table structures used by modern storage devices and provides GPT-aware partition analysis.
-
-### `DiskScanner`
-
-Scans configurable ranges of sectors and analyzes their contents to identify useful data for higher-level recovery operations.
-
-### `ThreadManager`
-
-Provides controlled concurrent execution for suitable scanning and recovery tasks.
-
-### `RecoveryEngine`
-
-Coordinates recovery analysis by connecting scanning operations with higher-level recovery logic.
-
-### `RecoveryResult`
-
-Shared data model used to transfer recovery statistics and results between different components of URE.
-
-### `RecoveryWriter`
-
-Handles the output stage of the recovery pipeline and writes recovered data to a separate destination.
-
----
-
-## Filesystem & Recovery Layer
-
-URE currently focuses on:
-
-* FAT32 filesystem analysis
-* NTFS filesystem analysis
-* MBR partition structures
-* GPT partition structures
-* Raw sector scanning
-* Filesystem-aware recovery
-* Signature-based recovery
-* Safe recovered-data output
-
-The modular design allows additional filesystems and recovery techniques to be introduced without redesigning the entire engine.
+```text
+NTFS Disk / Image
+        │
+        ▼
+NTFSBootSector
+        │
+        ▼
+NTFSMFTReader
+        │
+        ▼
+$MFT Records
+        │
+        ▼
+NTFSMFTParser
+        │
+        ▼
+NTFSDeletedFileScanner
+        │
+        ▼
+Deleted File Entry
+        │
+        ▼
+NTFSFileRecovery
+        │
+        ├── Resident $DATA
+        │
+        └── Non-Resident $DATA
+                 │
+                 ▼
+          NTFSRunListParser
+                 │
+                 ▼
+             Data Runs
+        │
+        ▼
+RecoveryWriter
+        │
+        ▼
+Recovered File
+```
 
 ---
 
-## Project Architecture
+## NTFS Non-Resident Recovery Validation
+
+MINION URE has successfully recovered a deleted **2 MiB NTFS non-resident file** from a test disk image.
+
+The original and recovered files were verified using SHA-256.
+
+```text
+Original:
+cbec94bf28ad0a1b60863f2350bc4b113dc984040ff9f4332867a4f4fe10cde4
+
+Recovered:
+cbec94bf28ad0a1b60863f2350bc4b113dc984040ff9f4332867a4f4fe10cde4
+```
+
+The identical hashes confirm that the recovered test file matched the original **byte-for-byte**.
+
+---
+
+## Project Structure
 
 ```text
 URE/
-├── api/                 # Public/API layer
+│
+├── api/
 │
 ├── common/
-│   ├── constants/       # Shared constants
-│   ├── model/           # Shared data models
-│   └── util/            # Utility components
+│   ├── constants/
+│   ├── model/
+│   └── util/
 │
 ├── core/
-│   ├── disk/            # Raw sector access
-│   ├── partition/       # MBR & GPT parsing
-│   ├── recovery/        # Core recovery engine/writer
-│   ├── scan/            # Disk scanning
-│   └── threading/       # Concurrent task management
+│   ├── disk/
+│   ├── partition/
+│   ├── recovery/
+│   ├── scan/
+│   └── threading/
 │
 ├── filesystem/
-│   ├── fat32/           # FAT32 structures and parsing
-│   └── ntfs/            # NTFS structures and parsing
-│
-├── scanner/             # Higher-level scanning
-│
-├── recovery/
-│   ├── fat32/           # FAT32 recovery
-│   ├── ntfs/            # NTFS recovery
-│   └── signature/       # Signature-based recovery
+│   ├── fat32/
+│   └── ntfs/
 │
 ├── gui/
-│   ├── dashboard/
-│   ├── scan/
-│   ├── preview/
-│   ├── recovery/
-│   ├── results/
-│   └── settings/
 │
-├── tests/               # Core/module tests
-├── testing/             # Integration, GUI & performance tests
-├── test-images/         # Local recovery test images
-├── docs/                # Technical documentation
-├── reports/             # Project/module reports
-├── resources/           # Application resources
-├── samples/             # Sample data
-└── scripts/             # Development scripts
+├── recovery/
+│
+├── resources/
+│   └── css/
+│
+├── tests/
+│   ├── core/
+│   └── filesystem/
+│       ├── fat32/
+│       └── ntfs/
+│
+├── docs/
+├── scripts/
+├── samples/
+└── README.md
 ```
 
 ---
 
-## Technology Stack
+## Important Components
 
-| Area             | Technology                   |
-| ---------------- | ---------------------------- |
-| Core Language    | Java                         |
-| User Interface   | JavaFX                       |
-| Filesystems      | FAT32, NTFS                  |
-| Partition Tables | MBR, GPT                     |
-| Disk Access      | Java Random Access I/O       |
-| Concurrency      | Java Threading / Executors   |
-| Version Control  | Git                          |
-| Repository       | GitHub                       |
-| Testing          | Module & Integration Testing |
+### `SectorReader`
+
+Provides low-level access to sectors inside a disk or disk-image file.
+
+It forms the foundation of the recovery engine.
+
+### `DiskScanner`
+
+Scans sectors and determines whether they contain data or are empty.
+
+### `RecoveryEngine`
+
+Analyzes scanned sectors and provides recovery statistics used by the recovery workflow.
+
+### `RecoveryWriter`
+
+Writes recovered byte data safely to an output file selected by the user.
+
+### `FAT32BootSector`
+
+Parses FAT32 filesystem parameters including:
+
+- Bytes per sector
+- Sectors per cluster
+- Reserved sectors
+- FAT count
+- FAT size
+- Root cluster
+- First data sector
+
+### `FAT32DeletedFileScanner`
+
+Searches FAT32 directory entries for deleted files.
+
+### `FAT32FileRecovery`
+
+Reconstructs deleted FAT32 file data from its starting cluster and metadata.
+
+### `NTFSBootSector`
+
+Parses important NTFS filesystem parameters including:
+
+- Bytes per sector
+- Sectors per cluster
+- Total sectors
+- MFT location
+- MFT mirror location
+- File-record configuration
+
+### `NTFSMFTReader`
+
+Locates and reads records from the NTFS Master File Table.
+
+### `NTFSMFTParser`
+
+Parses MFT records and extracts filesystem metadata used for deleted-file detection.
+
+### `NTFSDeletedFileScanner`
+
+Searches MFT records for deleted file entries.
+
+### `NTFSRunListParser`
+
+Parses NTFS mapping pairs used by non-resident `$DATA` attributes and converts them into physical cluster runs.
+
+### `NTFSFileRecovery`
+
+Recovers NTFS files from `$DATA` attributes.
+
+Current support includes:
+
+- Resident data
+- Non-resident data
+- Multiple data runs
+- Sparse runs
 
 ---
 
-## Development Workflow
-
-URE follows a feature-branch development model.
+## GUI Workflow
 
 ```text
-feature/fahim-core ──────┐
-                         │
-feature/hennad-filesystem-* ────┼──► develop ──► Integration Testing
-                         │                     │
-feature/adil-gui ────────┘                     ▼
-                                               main
+MINION URE
+    │
+    ▼
+Home
+    │
+    ▼
+Drive / Image Selection
+    │
+    ▼
+Live Scan
+    │
+    ▼
+Scan Results
+    │
+    ▼
+Recovery Analysis
+    │
+    ▼
+Select Recovery Method
+    │
+    ├── Raw Sector Recovery
+    │
+    ├── FAT32 File Recovery
+    │
+    └── NTFS File Recovery
+            │
+            ▼
+      Select Deleted File
+            │
+            ▼
+          Recover
+            │
+            ▼
+       Save Output
 ```
 
-Modules are developed and tested independently before being merged into `develop`.
+---
 
-After integration, the combined project is compiled and tested before stable changes are promoted to `main`.
+## Testing
+
+The project contains standalone tests for major recovery components.
+
+Current tested areas include:
+
+- Sector reading
+- MBR parsing
+- GPT parsing
+- Disk scanning
+- Recovery engine
+- Recovery writer
+- FAT32 boot-sector parsing
+- FAT32 deleted-file scanning
+- FAT32 deleted-file recovery
+- NTFS boot-sector parsing
+- NTFS MFT reading
+- NTFS deleted-file scanning
+- NTFS resident recovery
+- NTFS non-resident recovery
+
+Real FAT32 and NTFS filesystem images are used during recovery testing.
 
 ---
 
-## Project Goals
+## Current Limitations
 
-URE is being developed to demonstrate and explore:
+MINION URE is still under development.
 
-* Low-level disk I/O
-* Binary data processing
-* Partition-table parsing
-* FAT32 and NTFS filesystem structures
-* Raw disk scanning
-* File recovery techniques
-* Signature-based file carving
-* Concurrent processing
-* Modular software architecture
-* Java application development
-* Automated/module testing
-* Git-based collaborative development
+Current limitations include:
 
----
-
-## Current Status
-
-🚧 **Active Development**
-
-Core disk access, partition parsing, scanning, recovery coordination, threading, recovery result handling, and recovery output components have been implemented and tested.
-
-Filesystem, scanner, recovery, GUI, and full-system integration are under active development.
+- FAT32 deleted-file recovery currently focuses on basic directory entries.
+- FAT32 long filename reconstruction is not yet complete.
+- FAT32 fragmented-file recovery requires further development.
+- Recursive FAT32 subdirectory recovery is not yet complete.
+- NTFS MFT scanning currently uses a bounded record range.
+- Fully fragmented `$MFT` handling is not yet implemented.
+- NTFS compressed and encrypted file recovery is not supported.
+- NTFS attribute-list handling requires further development.
+- Recovery success depends on whether deleted data has already been overwritten.
+- Formatted-drive signature carving is not yet implemented.
 
 ---
 
-## Safety Notice
+## Planned Development
 
-> **URE is currently an educational and experimental project.**
->
-> Recovery operations should be performed on disk images or test devices whenever possible. Do not use the current development version on important storage devices without backups and proper testing.
+Upcoming work includes:
 
----
-
-## Future Development
-
-Planned improvements include:
-
-* Complete FAT32 recovery pipeline
-* Complete NTFS recovery pipeline
-* File signature carving
-* Recovery preview
-* Improved multithreaded scanning
-* JavaFX recovery dashboard
-* Progress monitoring
-* Extended filesystem support
-* Performance benchmarking
-* Full integration and recovery testing
+- Recovery safety and overwrite analysis
+- Recovery confidence prediction
+- Improved FAT32 fragmentation support
+- Improved NTFS filesystem handling
+- File preview
+- File-signature carving
+- Formatted-drive recovery
+- Recursive directory recovery
+- Recovery reports
+- Performance optimization
+- Additional filesystem testing
 
 ---
 
-## Contributors
+## Technology
 
-Developed as a collaborative software engineering project focused on understanding the internal architecture of file recovery systems.
+- **Language:** Java
+- **GUI:** JavaFX
+- **Filesystems:** FAT32, NTFS
+- **Development Environment:** Linux / Ubuntu
+- **Version Control:** Git & GitHub
 
 ---
 
-**Universal Recovery Engine — Recovering data from the storage layer up.**
+## Project Status
+
+**MINION URE v0.1 Beta**
+
+```text
+Core Sector Engine        ██████████  Working
+Raw Recovery              ██████████  Working
+FAT32 Recovery            ██████████  Working
+NTFS Recovery             ██████████  Working
+Recovery GUI              ██████████  Working
+Recovery Prediction       ███████░░░  In Development
+Signature Carving         ░░░░░░░░░░  Planned
+Formatted Drive Recovery  ░░░░░░░░░░  Planned
+```
+
+> MINION URE is an educational and experimental recovery engine. Always recover data to a different storage device and avoid writing to a source device containing data you want to recover.
+
+---
+
+## License
+
+License information will be added as the project approaches a stable release.
