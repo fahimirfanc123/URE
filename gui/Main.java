@@ -1094,26 +1094,57 @@ public class Main extends Application {
                         /*
                          * Scan finished.
                          */
-                        summary -> {
+                        summary ->
+                                openResults(
+                                        summary
+                                )
+                );
+
+        layout.setCenter(
+                scanView
+        );
+    }
+
+    /*
+     * =========================================================
+     * MODULE 4 — RESULTS
+     * =========================================================
+     */
+
+    private void openResults(
+            ScanView.ScanSummary summary
+    ) {
+
+        ResultsView resultsView =
+                new ResultsView(
+
+                        summary,
+
+                        () ->
+                                openScanner(
+                                        summary.getSource()
+                                ),
+
+                        () -> {
 
                             System.out.println(
-                                    "=== SCAN COMPLETE ==="
-                            );
-
-                            System.out.println(
-                                    summary
+                                    "Recovery requested for: "
+                                            +
+                                            summary
+                                                    .getSource()
+                                                    .getAbsolutePath()
                             );
 
                             /*
-                             * MODULE 4:
-                             * Recovery Results screen
-                             * will connect here.
+                             * MODULE 5:
+                             * Recovery analysis screen
+                             * connects here.
                              */
                         }
                 );
 
         layout.setCenter(
-                scanView
+                resultsView
         );
     }
 

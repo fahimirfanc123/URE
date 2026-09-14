@@ -1621,3 +1621,215 @@
 .scan-error {
     -fx-text-fill: #FF8A8A;
 }
+
+
+
+/* =========================================================
+   MODULE 4 — SCAN RESULTS
+========================================================= */
+
+.results-page {
+    -fx-padding: 28 44 32 44;
+    -fx-spacing: 18;
+    -fx-background-color: transparent;
+}
+
+
+/* STATUS */
+
+.results-complete {
+    -fx-padding: 6 11 6 11;
+    -fx-background-color: rgba(77,219,129,0.12);
+    -fx-border-color: rgba(77,219,129,0.30);
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-text-fill: #63E18F;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+
+/* TITLE */
+
+.results-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F8FAFC;
+}
+
+.results-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #AAB6C7;
+}
+
+
+/* SOURCE */
+
+.results-source-panel {
+    -fx-padding: 18 22 18 22;
+    -fx-background-color: rgba(18,24,38,0.96);
+    -fx-border-color: rgba(148,163,184,0.20);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-small-label {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8D9CAF;
+}
+
+.results-source-name {
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+.results-source-path {
+    -fx-font-size: 10px;
+    -fx-text-fill: #9AA8BA;
+}
+
+
+/* STAT CARDS */
+
+.results-stat-card {
+    -fx-padding: 17;
+    -fx-background-color: rgba(18,24,38,0.96);
+    -fx-border-color: rgba(148,163,184,0.15);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.results-stat-card:hover {
+    -fx-background-color: rgba(31,39,55,0.98);
+    -fx-border-color: rgba(233,84,32,0.35);
+}
+
+.results-stat-title {
+    -fx-font-size: 8px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #91A0B3;
+}
+
+.results-stat-value {
+    -fx-font-size: 21px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+.results-stat-detail {
+    -fx-font-size: 9px;
+    -fx-text-fill: #E95420;
+}
+
+
+/* ANALYSIS PANEL */
+
+.results-summary-panel {
+    -fx-padding: 20;
+    -fx-spacing: 13;
+    -fx-background-color: rgba(18,24,38,0.94);
+    -fx-border-color: rgba(148,163,184,0.15);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F1F5F9;
+}
+
+.results-row-name {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8998AB;
+}
+
+.results-row-value {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E3E9F2;
+}
+
+
+/* RECOVERY */
+
+.results-recovery-panel {
+    -fx-padding: 18 20 18 20;
+    -fx-background-color: rgba(233,84,32,0.055);
+    -fx-border-color: rgba(233,84,32,0.24);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-recovery-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FF8355;
+}
+
+.results-recovery-description {
+    -fx-font-size: 10px;
+    -fx-text-fill: #B8C2D0;
+}
+
+.results-recovery-button {
+    -fx-padding: 12 20 12 20;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #5E2750,
+            #9A3158,
+            #E95420
+        );
+
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+
+    -fx-border-color:
+        rgba(255,122,69,0.50);
+
+    -fx-text-fill: white;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+
+    -fx-cursor: none;
+}
+
+.results-recovery-button:hover {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #772953,
+            #B43A59,
+            #FF6C30
+        );
+
+    -fx-border-color: #FF7A45;
+}
+
+.results-recovery-button:disabled {
+    -fx-opacity: 0.30;
+}
+
+
+/* INFO */
+
+.results-information {
+    -fx-padding: 11 15 11 15;
+    -fx-background-color: rgba(77,219,129,0.045);
+    -fx-border-color: rgba(77,219,129,0.15);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-font-size: 9px;
+    -fx-text-fill: #94BCA2;
+}
