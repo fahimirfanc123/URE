@@ -1,6 +1,10 @@
 package filesystem.fat32;
 
 import core.disk.SectorReader;
+import core.prediction.RecoveryFeatureExtractor;
+import core.prediction.RecoveryFeatures;
+import core.prediction.RecoveryPrediction;
+import core.prediction.RecoveryPredictor;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,12 +17,13 @@ public class FAT32DeletedFileScanner {
 
     private final SectorReader reader;
     private final FAT32BootSector bootSector;
+    private final RecoveryFeatureExtractor featureExtractor;
+    private final RecoveryPredictor predictor;
 
     public FAT32DeletedFileScanner(
             SectorReader reader,
             FAT32BootSector bootSector
     ) {
-
         if (reader == null) {
             throw new IllegalArgumentException(
                     "SectorReader cannot be null"
@@ -33,6 +38,8 @@ public class FAT32DeletedFileScanner {
 
         this.reader = reader;
         this.bootSector = bootSector;
+        this.featureExtractor = new RecoveryFeatureExtractor();
+        this.predictor = new RecoveryPredictor();
     }
 
     public List<FAT32DirectoryEntry> scanRootDirectory()
@@ -142,13 +149,35 @@ public class FAT32DeletedFileScanner {
                             offset + 28
                     );
 
-            FAT32DirectoryEntry entry =
+            FAT32DirectoryEntry candidate =
                     new FAT32DirectoryEntry(
                             fileName,
                             startCluster,
                             fileSize,
                             true,
                             attributes
+                    );
+
+            RecoveryFeatures features =
+                    featureExtractor.extractFAT32(
+                            candidate,
+                            reader,
+                            bootSector
+                    );
+
+            RecoveryPrediction prediction =
+                    predictor.predict(
+                            features
+                    );
+
+            FAT32DirectoryEntry entry =
+                    new FAT32DirectoryEntry(
+                            fileName,
+                            startCluster,
+                            fileSize,
+                            true,
+                            attributes,
+                            prediction
                     );
 
             deletedFiles.add(

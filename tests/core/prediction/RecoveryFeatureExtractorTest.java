@@ -4,7 +4,8 @@ import core.prediction.RecoveryFeatureExtractor;
 import core.prediction.RecoveryFeatures;
 import core.prediction.RecoveryPrediction;
 import core.prediction.RecoveryPredictor;
-import filesystem.fat32.Fat32Directory;
+import filesystem.fat32.FAT32DirectoryEntry;
+import filesystem.ntfs.NTFSFileEntry;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -20,6 +21,8 @@ public class RecoveryFeatureExtractorTest {
 
         testFullHealthyCandidate();
         testPartiallyOverwrittenCandidate();
+        testNTFSResidentCandidate();
+        testNTFSNonResidentFragmentedCandidate();
 
         System.out.println("\n=== Test Summary ===");
         System.out.println("Passed: " + passed);
@@ -35,10 +38,13 @@ public class RecoveryFeatureExtractorTest {
              *
              * Expected clusters = 4
              */
-            Fat32Directory entry =
-                    createDeletedJpegEntry(
+            FAT32DirectoryEntry entry =
+                    new FAT32DirectoryEntry(
+                            "?HOTO.JPG",
                             5,
-                            4096
+                            4096,
+                            true,
+                            0x20
                     );
 
             byte[] fileData =
@@ -64,7 +70,7 @@ public class RecoveryFeatureExtractorTest {
                     new RecoveryFeatureExtractor();
 
             RecoveryFeatures features =
-                    extractor.extractFat32(
+                    extractor.extractFAT32(
                             entry,
                             fileData,
                             fatData,
@@ -86,7 +92,8 @@ public class RecoveryFeatureExtractorTest {
                     features.getOverwrittenPercentage() == 0.0;
 
             if (fragmentationCorrect &&
-                    overwriteCorrect) {
+                    overwriteCorrect &&
+                    prediction.getProbability() >= 80) {
 
                 pass(
                         "Healthy FAT32 candidate analyzed correctly"
@@ -116,7 +123,7 @@ public class RecoveryFeatureExtractorTest {
         } catch (Exception e) {
 
             fail(
-                    "Healthy candidate test threw exception"
+                    "Healthy candidate test threw exception: " + e.getMessage()
             );
         }
     }
@@ -130,10 +137,13 @@ public class RecoveryFeatureExtractorTest {
              *
              * Expected clusters = 4
              */
-            Fat32Directory entry =
-                    createDeletedJpegEntry(
+            FAT32DirectoryEntry entry =
+                    new FAT32DirectoryEntry(
+                            "?HOTO.JPG",
                             5,
-                            4096
+                            4096,
+                            true,
+                            0x20
                     );
 
             byte[] fileData =
@@ -165,7 +175,7 @@ public class RecoveryFeatureExtractorTest {
                     new RecoveryFeatureExtractor();
 
             RecoveryFeatures features =
-                    extractor.extractFat32(
+                    extractor.extractFAT32(
                             entry,
                             fileData,
                             fatData,
@@ -217,52 +227,98 @@ public class RecoveryFeatureExtractorTest {
         } catch (Exception e) {
 
             fail(
-                    "Partially overwritten candidate test threw exception"
+                    "Partially overwritten candidate test threw exception: " + e.getMessage()
             );
         }
     }
 
-    private static Fat32Directory createDeletedJpegEntry(
-            int firstCluster,
-            int fileSize) {
+    private static void testNTFSResidentCandidate() {
+        try {
+            NTFSFileEntry entry =
+                    new NTFSFileEntry(
+                            42,
+                            "SMALL.TXT",
+                            true,
+                            false,
+                            64,
+                            null
+                    );
 
-        byte[] entry = new byte[32];
+            byte[] textData = "MINION URE RESIDENT DATA TEST\n".getBytes();
 
-        /*
-         * FAT32 deleted-file marker.
-         */
-        entry[0] = (byte) 0xE5;
+            RecoveryFeatureExtractor extractor =
+                    new RecoveryFeatureExtractor();
 
-        entry[1] = 'H';
-        entry[2] = 'O';
-        entry[3] = 'T';
-        entry[4] = 'O';
+            RecoveryFeatures features =
+                    extractor.extractNTFS(
+                            entry,
+                            textData,
+                            true,
+                            1,
+                            textData.length
+                    );
 
-        /*
-         * JPG extension.
-         */
-        entry[8] = 'J';
-        entry[9] = 'P';
-        entry[10] = 'G';
+            RecoveryPrediction prediction =
+                    new RecoveryPredictor()
+                            .predict(features);
 
-        /*
-         * Starting cluster LOW word.
-         */
-        entry[26] =
-                (byte) (firstCluster & 0xFF);
+            if (Boolean.FALSE.equals(features.isFragmented()) &&
+                features.hasMetadata() &&
+                features.hasClustersAvailable() &&
+                prediction.getProbability() >= 80) {
 
-        entry[27] =
-                (byte) ((firstCluster >> 8) & 0xFF);
+                pass("NTFS Resident candidate analyzed correctly");
+                System.out.println("  " + prediction);
+            } else {
+                fail("NTFS Resident candidate analysis incorrect");
+            }
+        } catch (Exception e) {
+            fail("NTFS Resident test threw exception: " + e.getMessage());
+        }
+    }
 
-        /*
-         * File size.
-         */
-        ByteBuffer
-                .wrap(entry, 28, 4)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .putInt(fileSize);
+    private static void testNTFSNonResidentFragmentedCandidate() {
+        try {
+            NTFSFileEntry entry =
+                    new NTFSFileEntry(
+                            64,
+                            "FRAGMENTED.BIN",
+                            true,
+                            false,
+                            1048576,
+                            null
+                    );
 
-        return new Fat32Directory(entry);
+            byte[] headerData = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
+
+            RecoveryFeatureExtractor extractor =
+                    new RecoveryFeatureExtractor();
+
+            RecoveryFeatures features =
+                    extractor.extractNTFS(
+                            entry,
+                            headerData,
+                            false,
+                            4, // 4 data runs -> fragmented
+                            1048576
+                    );
+
+            RecoveryPrediction prediction =
+                    new RecoveryPredictor()
+                            .predict(features);
+
+            if (Boolean.TRUE.equals(features.isFragmented()) &&
+                features.hasValidHeader() &&
+                prediction.getRating().equals("Good")) {
+
+                pass("NTFS Non-resident fragmented candidate analyzed correctly");
+                System.out.println("  " + prediction);
+            } else {
+                fail("NTFS Non-resident fragmented candidate analysis incorrect");
+            }
+        } catch (Exception e) {
+            fail("NTFS Non-resident fragmented test threw exception: " + e.getMessage());
+        }
     }
 
     private static byte[] createJpegData() {

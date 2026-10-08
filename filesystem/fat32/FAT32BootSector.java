@@ -253,6 +253,18 @@ public class FAT32BootSector {
                         * sectorsPerCluster);
     }
 
+    /**
+     * Calculates the total number of data clusters in this FAT32 volume.
+     * Clusters are numbered from 2, so the count is based on available
+     * data area sectors divided by sectors per cluster.
+     *
+     * @return total number of data clusters
+     */
+    public long getTotalClusters() {
+        long dataAreaSectors = totalSectors - getFirstDataSector();
+        return dataAreaSectors / sectorsPerCluster;
+    }
+
     @Override
     public String toString() {
 

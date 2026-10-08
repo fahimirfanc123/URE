@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 public class NTFSMFTParser {
 
     private static final int ATTRIBUTE_FILE_NAME = 0x30;
+    private static final int ATTRIBUTE_DATA = 0x80;
     private static final int ATTRIBUTE_END = 0xFFFFFFFF;
 
     public NTFSFileEntry parse(
@@ -27,7 +28,6 @@ public class NTFSMFTParser {
             return null;
         }
 
-
         /*
          * MFT record flags:
          *
@@ -49,7 +49,6 @@ public class NTFSMFTParser {
         boolean deleted =
                 !inUse;
 
-
         int firstAttributeOffset =
                 readUInt16LE(
                         data,
@@ -62,9 +61,11 @@ public class NTFSMFTParser {
             return null;
         }
 
-
         int offset =
                 firstAttributeOffset;
+
+        String fileName = null;
+        long fileSize = 0;
 
         while (offset + 16 <= data.length) {
 
@@ -78,7 +79,6 @@ public class NTFSMFTParser {
                 break;
             }
 
-
             int attributeLength =
                     (int) readUInt32LE(
                             data,
@@ -91,10 +91,8 @@ public class NTFSMFTParser {
                 break;
             }
 
-
             int nonResident =
                     data[offset + 8] & 0xFF;
-
 
             if (attributeType == ATTRIBUTE_FILE_NAME &&
                 nonResident == 0) {
@@ -114,66 +112,60 @@ public class NTFSMFTParser {
                 int contentStart =
                         offset + contentOffset;
 
+                if (contentStart >= 0 &&
+                    contentLength >= 66 &&
+                    contentStart + contentLength <= data.length) {
 
-                if (contentStart < 0 ||
-                    contentLength < 66 ||
-                    contentStart + contentLength > data.length) {
+                    int nameLength =
+                            data[
+                                    contentStart + 64
+                            ] & 0xFF;
 
-                    offset += attributeLength;
-                    continue;
+                    int nameByteLength =
+                            nameLength * 2;
+
+                    int nameStart =
+                            contentStart + 66;
+
+                    if (nameStart + nameByteLength <= data.length) {
+
+                        fileName =
+                                new String(
+                                        data,
+                                        nameStart,
+                                        nameByteLength,
+                                        StandardCharsets.UTF_16LE
+                                );
+
+                        if (fileSize == 0 && contentStart + 56 <= data.length) {
+                            fileSize = readInt64LE(data, contentStart + 48);
+                        }
+                    }
                 }
-
-
-                int nameLength =
-                        data[
-                                contentStart + 64
-                        ] & 0xFF;
-
-
-                int nameByteLength =
-                        nameLength * 2;
-
-
-                int nameStart =
-                        contentStart + 66;
-
-
-                if (nameStart + nameByteLength >
-                    data.length) {
-
-                    offset += attributeLength;
-                    continue;
-                }
-
-
-                String fileName =
-                        new String(
-                                data,
-                                nameStart,
-                                nameByteLength,
-                                StandardCharsets.UTF_16LE
-                        );
-
-
-                if (!fileName.isBlank()) {
-
-                    return new NTFSFileEntry(
-                            record.getRecordNumber(),
-                            fileName,
-                            deleted,
-                            directory
-                    );
+            } else if (attributeType == ATTRIBUTE_DATA) {
+                if (nonResident == 0) {
+                    fileSize = readUInt32LE(data, offset + 16);
+                } else {
+                    fileSize = readInt64LE(data, offset + 48);
                 }
             }
-
 
             offset += attributeLength;
         }
 
+        if (fileName != null && !fileName.isBlank()) {
+            return new NTFSFileEntry(
+                    record.getRecordNumber(),
+                    fileName,
+                    deleted,
+                    directory,
+                    fileSize,
+                    null
+            );
+        }
 
         return null;
     }
-
 
     private boolean applyFixup(
             byte[] data
@@ -182,7 +174,6 @@ public class NTFSMFTParser {
         if (data.length < 8) {
             return false;
         }
-
 
         int usaOffset =
                 readUInt16LE(
@@ -196,7 +187,6 @@ public class NTFSMFTParser {
                         6
                 );
 
-
         if (usaOffset <= 0 ||
             usaCount <= 1 ||
             usaOffset + usaCount * 2 > data.length) {
@@ -204,24 +194,20 @@ public class NTFSMFTParser {
             return false;
         }
 
-
         int updateSequenceNumber =
                 readUInt16LE(
                         data,
                         usaOffset
                 );
 
-
         for (int i = 1; i < usaCount; i++) {
 
             int sectorEnd =
                     (i * 512) - 2;
 
-
             if (sectorEnd + 1 >= data.length) {
                 return false;
             }
-
 
             int existing =
                     readUInt16LE(
@@ -229,11 +215,9 @@ public class NTFSMFTParser {
                             sectorEnd
                     );
 
-
             if (existing != updateSequenceNumber) {
                 return false;
             }
-
 
             data[sectorEnd] =
                     data[
@@ -246,10 +230,8 @@ public class NTFSMFTParser {
                     ];
         }
 
-
         return true;
     }
-
 
     private int readUInt16LE(
             byte[] data,
@@ -260,7 +242,6 @@ public class NTFSMFTParser {
                 |
                 ((data[offset + 1] & 0xFF) << 8);
     }
-
 
     private long readUInt32LE(
             byte[] data,
@@ -274,5 +255,19 @@ public class NTFSMFTParser {
                 (((long) data[offset + 2] & 0xFF) << 16)
                 |
                 (((long) data[offset + 3] & 0xFF) << 24);
+    }
+
+    private long readInt64LE(
+            byte[] data,
+            int offset
+    ) {
+
+        long value = 0;
+
+        for (int i = 0; i < 8; i++) {
+            value |= ((long) data[offset + i] & 0xFF) << (8 * i);
+        }
+
+        return value;
     }
 }
