@@ -45,12 +45,6 @@
     -fx-padding:
         8 10 8 16;
 
-    -fx-min-height:
-        48px;
-
-    -fx-pref-height:
-        48px;
-
     -fx-background-color:
         rgba(
             7,
@@ -71,13 +65,7 @@
         transparent;
 
     -fx-border-width:
-        0 0 1 0;
-
-    -fx-min-height: 54px;
-
-    -fx-pref-height: 54px;
-
-    -fx-max-height: 54px;    
+        0 0 1 0;    
 }
 
 
@@ -615,12 +603,6 @@
 ========================================================= */
 
 .bottom-bar {
-
-    -fx-min-height:
-        38px;
-
-    -fx-pref-height:
-        38px;
 
     -fx-padding:
         0 16 0 16;
@@ -1265,8 +1247,8 @@
 ========================================================= */
 
 .scan-page {
-    -fx-padding: 28 44 32 44;
-    -fx-spacing: 20;
+    -fx-padding: 18 32 18 32;
+    -fx-spacing: 12;
     -fx-background-color: transparent;
 }
 
@@ -2525,4 +2507,57 @@
     -fx-text-fill: #ff7b72;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
+}
+/* URE-themed Results ScrollPane */
+.ure-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.ure-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.ure-scroll-pane > .corner {
+    -fx-background-color: #111827;
+}
+
+.ure-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: #111827;
+    -fx-pref-width: 9px;
+    -fx-padding: 2px;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .track {
+    -fx-background-color: #111827;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: #374151;
+    -fx-background-radius: 8px;
+    -fx-background-insets: 1px;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #06b6d4;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb:pressed {
+    -fx-background-color: #0891b2;
+}
+
+.ure-scroll-pane .scroll-bar .increment-button,
+.ure-scroll-pane .scroll-bar .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.ure-scroll-pane .scroll-bar .increment-arrow,
+.ure-scroll-pane .scroll-bar .decrement-arrow {
+    -fx-padding: 0;
+    -fx-shape: "";
 }

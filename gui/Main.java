@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -127,6 +128,46 @@ public class Main extends Application {
                         700
                 );
 
+        scene.heightProperty().addListener(
+                (observable, oldHeight, newHeight) -> {
+                    boolean compact = newHeight.doubleValue() < 680;
+
+                    double topHeight = compact ? 46 : 54;
+                    double footerHeight = compact ? 32 : 38;
+
+                    topBar.setMinHeight(topHeight);
+                    topBar.setPrefHeight(topHeight);
+                    topBar.setMaxHeight(topHeight);
+                    topBar.setStyle(
+                            compact
+                                    ? "-fx-padding: 4 10 4 16;"
+                                    : "-fx-padding: 6 10 6 16;"
+                    );
+
+                    bottomBar.setMinHeight(footerHeight);
+                    bottomBar.setPrefHeight(footerHeight);
+                    bottomBar.setMaxHeight(footerHeight);
+                    bottomBar.setStyle(
+                            compact
+                                    ? "-fx-padding: 0 10 0 10;"
+                                    : "-fx-padding: 0 16 0 16;"
+                    );
+                }
+        );
+
+        // Apply the correct dimensions immediately as well.
+        boolean compactWindow = scene.getHeight() < 680;
+        double initialTopHeight = compactWindow ? 46 : 54;
+        double initialFooterHeight = compactWindow ? 32 : 38;
+
+        topBar.setMinHeight(initialTopHeight);
+        topBar.setPrefHeight(initialTopHeight);
+        topBar.setMaxHeight(initialTopHeight);
+
+        bottomBar.setMinHeight(initialFooterHeight);
+        bottomBar.setPrefHeight(initialFooterHeight);
+        bottomBar.setMaxHeight(initialFooterHeight);
+
         scene.setFill(
                 Color.TRANSPARENT
         );
@@ -158,6 +199,7 @@ public class Main extends Application {
         stage.setMinHeight(600);
 
         stage.show();
+        stage.centerOnScreen();
     }
 
     /*
@@ -181,13 +223,7 @@ topBar.setAlignment(
         Pos.CENTER_LEFT
 );
 
-/*
- * Keep the custom title bar fixed and stable
- * when switching between application screens.
- */
-topBar.setMinHeight(54);
-topBar.setPrefHeight(54);
-topBar.setMaxHeight(54);
+/* Height is adapted to the available window size. */
 
 topBar.setMinWidth(0);
 topBar.setMaxWidth(Double.MAX_VALUE);
@@ -1144,9 +1180,15 @@ topBar.setMaxWidth(Double.MAX_VALUE);
                                 )
                 );
 
-        layout.setCenter(
-                resultsView
-        );
+        ScrollPane scrollPane = new ScrollPane(resultsView);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setPannable(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.getStyleClass().add("ure-scroll-pane");
+
+        layout.setCenter(scrollPane);
     }
 
     /*
