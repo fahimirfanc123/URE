@@ -33,6 +33,7 @@ public class FAT32RecoveryView extends VBox {
 
     private final VBox filesContainer;
     private final Label statusLabel;
+    private final Button exitButton;
     private final ProgressIndicator loadingIndicator;
 
     public FAT32RecoveryView(
@@ -44,6 +45,12 @@ public class FAT32RecoveryView extends VBox {
         this.stage = stage;
         this.source = source;
         this.onBack = onBack;
+
+        exitButton = new Button("EXIT");
+        exitButton.getStyleClass().add("ure-exit-button");
+        exitButton.setVisible(false);
+        exitButton.setManaged(false);
+        exitButton.setOnAction(event -> stage.close());
 
         setMinWidth(0);
         setMinHeight(0);
@@ -61,7 +68,7 @@ public class FAT32RecoveryView extends VBox {
          */
 
         Label module =
-                new Label("MODULE 07  /  FAT32 RECOVERY");
+                new Label("FAT32 RECOVERY");
 
         module.getStyleClass().add(
                 "fat32-module-label"
@@ -218,12 +225,15 @@ public class FAT32RecoveryView extends VBox {
         );
 
 
+        HBox footer = new HBox(12, backButton, exitButton);
+        footer.setAlignment(Pos.CENTER_LEFT);
+
         getChildren().addAll(
                 header,
                 sourcePanel,
                 statusBox,
                 scrollPane,
-                backButton
+                footer
         );
 
 
@@ -632,6 +642,9 @@ public class FAT32RecoveryView extends VBox {
                                     +
                             result.getFileName()
                     );
+
+                    exitButton.setManaged(true);
+                    exitButton.setVisible(true);
 
 
                     System.out.println(

@@ -2113,6 +2113,24 @@
 
 .recovery-mode-page .progress-bar {
     -fx-accent: #e95420;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.recovery-mode-page .progress-bar > .track {
+    -fx-background-color: #25292d;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.recovery-mode-page .progress-bar > .bar {
+    -fx-background-color: #e95420;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6px;
 }
 
 /* back */
@@ -2560,4 +2578,18 @@
 .ure-scroll-pane .scroll-bar .decrement-arrow {
     -fx-padding: 0;
     -fx-shape: "";
+}
+
+
+/* Exit button shown only after successful recovery */
+.ure-exit-button {
+    -fx-background-color: #dc2626;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+.ure-exit-button:hover {
+    -fx-background-color: #b91c1c;
 }

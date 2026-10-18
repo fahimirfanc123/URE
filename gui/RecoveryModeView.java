@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -44,6 +45,24 @@ public class RecoveryModeView extends VBox {
     private final Label statusLabel;
     private final ProgressBar progressBar;
     private final Button rawRecoveryButton;
+    private final Button exitButton;
+
+    private ScrollPane createScrollableView(javafx.scene.Node content) {
+        ScrollPane pane = new ScrollPane(content);
+        pane.setFitToWidth(true);
+        pane.setFitToHeight(false);
+        pane.setPannable(true);
+        pane.addEventFilter(javafx.scene.input.ScrollEvent.SCROLL, event -> {
+            if (event.getDeltaY() != 0) {
+                pane.setVvalue(pane.getVvalue() - event.getDeltaY() * 0.0025);
+                event.consume();
+            }
+        });
+        pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        pane.getStyleClass().add("ure-scroll-pane");
+        return pane;
+    }
 
     public RecoveryModeView(
             Stage stage,
@@ -56,6 +75,12 @@ public class RecoveryModeView extends VBox {
         this.source = source;
         this.recoveryResult = recoveryResult;
         this.onBack = onBack;
+
+        exitButton = new Button("EXIT");
+        exitButton.getStyleClass().add("ure-exit-button");
+        exitButton.setVisible(false);
+        exitButton.setManaged(false);
+        exitButton.setOnAction(event -> stage.close());
 
         setMinWidth(0);
         setMinHeight(0);
@@ -87,7 +112,7 @@ public class RecoveryModeView extends VBox {
 
         Label moduleLabel =
                 new Label(
-                        "MODULE 06  /  RECOVERY MODE"
+                        "RECOVERY MODE"
                 );
 
         moduleLabel
@@ -348,25 +373,25 @@ fat32Button
         );
 
 
-fat32Button.setOnAction(
-        event -> {
+fat32Button.setOnAction(event -> {
+    javafx.scene.Node recoveryContainer =
+            getParent() instanceof ScrollPane ? getParent() : this;
 
-            if (getParent()
-                    instanceof javafx.scene.layout.BorderPane borderPane) {
+    javafx.scene.Parent ancestor = getParent();
+    while (ancestor != null
+            && !(ancestor instanceof javafx.scene.layout.BorderPane)) {
+        ancestor = ancestor.getParent();
+    }
 
-                FAT32RecoveryView fat32View =
-                        new FAT32RecoveryView(
-                                stage,
-                                source,
-                                () -> borderPane.setCenter(this)
-                        );
-
-                borderPane.setCenter(
-                        fat32View
-                );
-            }
-        }
-);
+    if (ancestor instanceof javafx.scene.layout.BorderPane borderPane) {
+        FAT32RecoveryView fat32View = new FAT32RecoveryView(
+                stage,
+                source,
+                () -> borderPane.setCenter(recoveryContainer)
+        );
+        borderPane.setCenter(fat32View);
+    }
+});
 
 
 VBox fat32Card =
@@ -443,25 +468,25 @@ ntfsButton
         );
 
 
-ntfsButton.setOnAction(
-        event -> {
+ntfsButton.setOnAction(event -> {
+    javafx.scene.Node recoveryContainer =
+            getParent() instanceof ScrollPane ? getParent() : this;
 
-            if (getParent()
-                    instanceof javafx.scene.layout.BorderPane borderPane) {
+    javafx.scene.Parent ancestor = getParent();
+    while (ancestor != null
+            && !(ancestor instanceof javafx.scene.layout.BorderPane)) {
+        ancestor = ancestor.getParent();
+    }
 
-                NTFSRecoveryView ntfsView =
-                        new NTFSRecoveryView(
-                                stage,
-                                source,
-                                () -> borderPane.setCenter(this)
-                        );
-
-                borderPane.setCenter(
-                        ntfsView
-                );
-            }
-        }
-);
+    if (ancestor instanceof javafx.scene.layout.BorderPane borderPane) {
+        NTFSRecoveryView ntfsView = new NTFSRecoveryView(
+                stage,
+                source,
+                () -> borderPane.setCenter(recoveryContainer)
+        );
+        borderPane.setCenter(ntfsView);
+    }
+});
 
 
 VBox ntfsCard =
@@ -605,13 +630,16 @@ ntfsCard
         );
 
 
+        HBox footer = new HBox(12, backButton, exitButton);
+        footer.setAlignment(Pos.CENTER_LEFT);
+
         getChildren().addAll(
                 header,
                 sourcePanel,
                 recoveryMethods,
                 statusPanel,
                 spacer,
-                backButton
+                footer
         );
     }
 
@@ -884,6 +912,9 @@ ntfsCard
                                     +
                             result.toAbsolutePath()
                     );
+
+                    exitButton.setManaged(true);
+                    exitButton.setVisible(true);
 
 
                     rawRecoveryButton.setDisable(

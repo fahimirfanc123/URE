@@ -34,6 +34,7 @@ public class NTFSRecoveryView extends VBox {
 
     private final VBox filesContainer;
     private final Label statusLabel;
+    private final Button exitButton;
     private final ProgressIndicator loadingIndicator;
 
 
@@ -46,6 +47,12 @@ public class NTFSRecoveryView extends VBox {
         this.stage = stage;
         this.source = source;
         this.onBack = onBack;
+
+        exitButton = new Button("EXIT");
+        exitButton.getStyleClass().add("ure-exit-button");
+        exitButton.setVisible(false);
+        exitButton.setManaged(false);
+        exitButton.setOnAction(event -> stage.close());
 
         setMinWidth(0);
         setMinHeight(0);
@@ -72,7 +79,7 @@ public class NTFSRecoveryView extends VBox {
 
         Label moduleLabel =
                 new Label(
-                        "MODULE 08 / NTFS RECOVERY"
+                        "NTFS RECOVERY"
                 );
 
         moduleLabel
@@ -194,10 +201,7 @@ public class NTFSRecoveryView extends VBox {
         );
 
 
-        HBox footer =
-                new HBox(
-                        backButton
-                );
+        HBox footer = new HBox(12, backButton, exitButton);
 
         footer.setAlignment(
                 Pos.CENTER_LEFT
@@ -662,6 +666,9 @@ public class NTFSRecoveryView extends VBox {
                             "RECOVERY COMPLETE • "
                                     + entry.getFileName()
                     );
+
+                    exitButton.setManaged(true);
+                    exitButton.setVisible(true);
                 }
         );
 

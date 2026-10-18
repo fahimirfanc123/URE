@@ -1160,6 +1160,23 @@ topBar.setMaxWidth(Double.MAX_VALUE);
      * =========================================================
      */
 
+    private ScrollPane createScrollableView(Node content) {
+        ScrollPane pane = new ScrollPane(content);
+        pane.setFitToWidth(true);
+        pane.setFitToHeight(false);
+        pane.setPannable(true);
+        pane.addEventFilter(javafx.scene.input.ScrollEvent.SCROLL, event -> {
+            if (event.getDeltaY() != 0) {
+                pane.setVvalue(pane.getVvalue() - event.getDeltaY() * 0.0025);
+                event.consume();
+            }
+        });
+        pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        pane.getStyleClass().add("ure-scroll-pane");
+        return pane;
+    }
+
     private void openResults(
             ScanView.ScanSummary summary
     ) {
@@ -1180,15 +1197,7 @@ topBar.setMaxWidth(Double.MAX_VALUE);
                                 )
                 );
 
-        ScrollPane scrollPane = new ScrollPane(resultsView);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(false);
-        scrollPane.setPannable(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.getStyleClass().add("ure-scroll-pane");
-
-        layout.setCenter(scrollPane);
+        layout.setCenter(createScrollableView(resultsView));
     }
 
     /*
@@ -1218,9 +1227,7 @@ topBar.setMaxWidth(Double.MAX_VALUE);
                                          )
                               );
 
-        layout.setCenter(
-                recoveryView
-        );
+        layout.setCenter(createScrollableView(recoveryView));
     }
 
 /*
@@ -1250,9 +1257,7 @@ private void openRecoveryMode(
             );
 
 
-    layout.setCenter(
-            recoveryModeView
-    );
+    layout.setCenter(createScrollableView(recoveryModeView));
 }
 
     /*
