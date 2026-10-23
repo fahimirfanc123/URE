@@ -4,91 +4,112 @@ import core.disk.SectorReader;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Arrays;
+import java.util.zip.CRC32;
 
 /**
- * GPTParser reads and validates the GPT header located at LBA 1.
- *
- * GPT disks contain a header whose first 8 bytes contain
- * the signature "EFI PART".
+ * Reads GPT headers and partition entries from a disk image.
  */
 public class GPTParser {
 
     private static final long GPT_HEADER_LBA = 1;
     private static final String GPT_SIGNATURE = "EFI PART";
+    private static final int MIN_HEADER_SIZE = 92;
+    private static final int MIN_PARTITION_ENTRY_SIZE = 128;
 
     private final SectorReader sectorReader;
 
-    /**
-     * Creates a GPT parser using an existing SectorReader.
-     *
-     * @param sectorReader sector reader used to read raw disk sectors
-     */
     public GPTParser(SectorReader sectorReader) {
         if (sectorReader == null) {
             throw new IllegalArgumentException("SectorReader cannot be null");
         }
-
         this.sectorReader = sectorReader;
     }
 
-    /**
-     * Checks whether the disk contains a valid GPT signature.
-     *
-     * GPT header starts at LBA 1.
-     * Bytes 0-7 should contain "EFI PART".
-     *
-     * @return true if GPT signature exists
-     */
     public boolean isValidGPT() throws IOException {
-
-        byte[] sector = sectorReader.readSector(GPT_HEADER_LBA);
-
-        if (sector.length < 92) {
+        if (sectorReader.getTotalSectors() <= GPT_HEADER_LBA
+                || sectorReader.getSectorSize() < MIN_HEADER_SIZE) {
             return false;
         }
 
-        String signature =
-                new String(sector, 0, 8, StandardCharsets.US_ASCII);
+        byte[] sector = sectorReader.readSector(GPT_HEADER_LBA);
 
-        return GPT_SIGNATURE.equals(signature);
+        return new String(
+                sector, 0, 8, StandardCharsets.US_ASCII
+        ).equals(GPT_SIGNATURE);
     }
 
-    /**
-     * Reads important information from the GPT header.
-     *
-     * @return parsed GPTHeader object
-     */
     public GPTHeader readHeader() throws IOException {
+        if (sectorReader.getTotalSectors() <= GPT_HEADER_LBA
+                || sectorReader.getSectorSize() < MIN_HEADER_SIZE) {
+            throw new IOException("Disk is too small for a GPT header");
+        }
 
         byte[] sector = sectorReader.readSector(GPT_HEADER_LBA);
 
-        if (sector.length < 92) {
-            throw new IOException("GPT header sector is too small");
-        }
-
-        String signature =
-                new String(sector, 0, 8, StandardCharsets.US_ASCII);
-
-        if (!GPT_SIGNATURE.equals(signature)) {
+        if (!GPT_SIGNATURE.equals(
+                new String(sector, 0, 8, StandardCharsets.US_ASCII))) {
             throw new IOException("Invalid GPT signature");
         }
 
         long revision = readUnsignedIntLE(sector, 8);
         long headerSize = readUnsignedIntLE(sector, 12);
-
         long currentLBA = readLongLE(sector, 24);
         long backupLBA = readLongLE(sector, 32);
-
         long firstUsableLBA = readLongLE(sector, 40);
         long lastUsableLBA = readLongLE(sector, 48);
-
         long partitionEntryStartLBA = readLongLE(sector, 72);
+        long numberOfPartitionEntries = readUnsignedIntLE(sector, 80);
+        long sizeOfPartitionEntry = readUnsignedIntLE(sector, 84);
 
-        long numberOfPartitionEntries =
-                readUnsignedIntLE(sector, 80);
+        if (headerSize < MIN_HEADER_SIZE
+                || headerSize > sector.length) {
+            throw new IOException("Invalid GPT header size");
+        }
 
-        long sizeOfPartitionEntry =
-                readUnsignedIntLE(sector, 84);
+        if (currentLBA < 0 || backupLBA < 0
+                || firstUsableLBA < 0 || lastUsableLBA < firstUsableLBA
+                || partitionEntryStartLBA < 0
+                || numberOfPartitionEntries <= 0
+                || sizeOfPartitionEntry < MIN_PARTITION_ENTRY_SIZE
+                || sizeOfPartitionEntry % 8 != 0) {
+            throw new IOException("Invalid GPT header fields");
+        }
+
+        if (currentLBA != GPT_HEADER_LBA
+                || currentLBA >= sectorReader.getTotalSectors()
+                || backupLBA >= sectorReader.getTotalSectors()
+                || lastUsableLBA >= sectorReader.getTotalSectors()
+                || partitionEntryStartLBA >= sectorReader.getTotalSectors()) {
+            throw new IOException("GPT header contains out-of-range LBAs");
+        }
+
+        long diskSectors = sectorReader.getTotalSectors();
+
+        if (numberOfPartitionEntries
+                > Long.MAX_VALUE / sizeOfPartitionEntry) {
+            throw new IOException("GPT partition table size overflows");
+        }
+
+        long tableBytes =
+                numberOfPartitionEntries * sizeOfPartitionEntry;
+        long sectorSize = sectorReader.getSectorSize();
+        long tableSectors = tableBytes / sectorSize;
+
+        if (tableBytes % sectorSize != 0) {
+            tableSectors++;
+        }
+
+        if (tableSectors <= 0
+                || tableSectors > Integer.MAX_VALUE
+                || tableSectors > diskSectors - partitionEntryStartLBA
+                || tableBytes > Integer.MAX_VALUE) {
+            throw new IOException(
+                    "GPT partition entry array exceeds supported bounds");
+        }
 
         return new GPTHeader(
                 revision,
@@ -103,22 +124,188 @@ public class GPTParser {
         );
     }
 
-    /**
-     * Reads a 32-bit little-endian unsigned integer.
-     */
-    private long readUnsignedIntLE(byte[] data, int offset) {
 
+    /**
+     * Validates the GPT header CRC32 and partition-entry-array CRC32.
+     *
+     * Returns false when a checksum does not match.
+     * Throws IOException when the GPT structure cannot be safely read.
+     *
+     * This validates the primary GPT header at LBA 1. It does not
+     * validate the backup GPT header or perform recovery.
+     */
+    public boolean validateIntegrity() throws IOException {
+        GPTHeader parsed = readHeader();
+
+        byte[] headerSector = sectorReader.readSector(GPT_HEADER_LBA);
+        int headerSize = Math.toIntExact(parsed.getHeaderSize());
+
+        long expectedHeaderCrc = readUnsignedIntLE(headerSector, 16);
+        byte[] headerBytes = Arrays.copyOf(headerSector, headerSize);
+
+        // The header CRC field must be zero while calculating the CRC.
+        Arrays.fill(headerBytes, 16, 20, (byte) 0);
+
+        CRC32 headerCrc = new CRC32();
+        headerCrc.update(headerBytes);
+
+        if (headerCrc.getValue() != expectedHeaderCrc) {
+            return false;
+        }
+
+        long entryCount = parsed.getNumberOfPartitionEntries();
+        long entrySize = parsed.getSizeOfPartitionEntry();
+        long tableBytesLong = entryCount * entrySize;
+
+        if (tableBytesLong <= 0 || tableBytesLong > Integer.MAX_VALUE) {
+            throw new IOException("GPT partition array is too large");
+        }
+
+        int tableBytes = (int) tableBytesLong;
+        int sectorSize = sectorReader.getSectorSize();
+        long sectorsLong = (tableBytesLong + sectorSize - 1) / sectorSize;
+
+        if (sectorsLong <= 0 || sectorsLong > Integer.MAX_VALUE) {
+            throw new IOException("GPT partition array exceeds supported bounds");
+        }
+
+        byte[] paddedTable = sectorReader.readSectors(
+                parsed.getPartitionEntryStartLBA(),
+                (int) sectorsLong
+        );
+
+        byte[] exactTable = Arrays.copyOf(paddedTable, tableBytes);
+
+        long expectedArrayCrc = readUnsignedIntLE(headerSector, 88);
+
+        CRC32 arrayCrc = new CRC32();
+        arrayCrc.update(exactTable);
+
+        return arrayCrc.getValue() == expectedArrayCrc;
+    }
+
+    /**
+     * Reads all used GPT partition entries.
+     * Unused entries have an all-zero partition type GUID.
+     */
+    public List<GPTPartitionEntry> readPartitions() throws IOException {
+        GPTHeader header = readHeader();
+
+        long entryCount = header.getNumberOfPartitionEntries();
+        long entrySize = header.getSizeOfPartitionEntry();
+        long tableBytes = entryCount * entrySize;
+        long sectorSize = sectorReader.getSectorSize();
+
+        long tableSectorsLong = tableBytes / sectorSize;
+        if (tableBytes % sectorSize != 0) {
+            tableSectorsLong++;
+        }
+
+        if (tableSectorsLong > Integer.MAX_VALUE
+                || tableBytes > Integer.MAX_VALUE) {
+            throw new IOException("GPT partition table is too large");
+        }
+
+        byte[] table = sectorReader.readSectors(
+                header.getPartitionEntryStartLBA(),
+                (int) tableSectorsLong
+        );
+
+        List<GPTPartitionEntry> partitions = new ArrayList<>();
+
+        for (int i = 0; i < (int) entryCount; i++) {
+            int offset = Math.toIntExact(i * entrySize);
+
+            // A zero type GUID marks an unused GPT entry.
+            if (isZeroGuid(table, offset)) {
+                continue;
+            }
+
+            String typeGuid = readGuid(table, offset);
+            String uniqueGuid = readGuid(table, offset + 16);
+            long firstLBA = readLongLE(table, offset + 32);
+            long lastLBA = readLongLE(table, offset + 40);
+            long attributes = readLongLE(table, offset + 48);
+
+            if (firstLBA < 0 || lastLBA < firstLBA
+                    || firstLBA < header.getFirstUsableLBA()
+                    || lastLBA > header.getLastUsableLBA()
+                    || lastLBA >= sectorReader.getTotalSectors()) {
+                throw new IOException(
+                        "Invalid GPT partition range in entry " + (i + 1));
+            }
+
+            int nameLength = (int) Math.min(72L, entrySize - 56);
+            String name = new String(
+                    table,
+                    offset + 56,
+                    nameLength,
+                    StandardCharsets.UTF_16LE
+            );
+
+            int nullIndex = name.indexOf('\0');
+            if (nullIndex >= 0) {
+                name = name.substring(0, nullIndex);
+            }
+
+            partitions.add(new GPTPartitionEntry(
+                    i + 1,
+                    typeGuid,
+                    uniqueGuid,
+                    firstLBA,
+                    lastLBA,
+                    lastLBA - firstLBA + 1,
+                    attributes,
+                    name
+            ));
+        }
+
+        return Collections.unmodifiableList(partitions);
+    }
+
+    private static boolean isZeroGuid(byte[] data, int offset) {
+        for (int i = 0; i < 16; i++) {
+            if (data[offset + i] != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Formats a GPT GUID using its standard textual representation.
+     * The first three GUID fields are stored little-endian on disk.
+     */
+    private static String readGuid(byte[] data, int offset) {
+        return String.format(
+                "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                data[offset + 3] & 0xFF,
+                data[offset + 2] & 0xFF,
+                data[offset + 1] & 0xFF,
+                data[offset] & 0xFF,
+                data[offset + 5] & 0xFF,
+                data[offset + 4] & 0xFF,
+                data[offset + 7] & 0xFF,
+                data[offset + 6] & 0xFF,
+                data[offset + 8] & 0xFF,
+                data[offset + 9] & 0xFF,
+                data[offset + 10] & 0xFF,
+                data[offset + 11] & 0xFF,
+                data[offset + 12] & 0xFF,
+                data[offset + 13] & 0xFF,
+                data[offset + 14] & 0xFF,
+                data[offset + 15] & 0xFF
+        );
+    }
+
+    private static long readUnsignedIntLE(byte[] data, int offset) {
         return ((long) data[offset] & 0xFF)
                 | (((long) data[offset + 1] & 0xFF) << 8)
                 | (((long) data[offset + 2] & 0xFF) << 16)
                 | (((long) data[offset + 3] & 0xFF) << 24);
     }
 
-    /**
-     * Reads a 64-bit little-endian value.
-     */
-    private long readLongLE(byte[] data, int offset) {
-
+    private static long readLongLE(byte[] data, int offset) {
         return ((long) data[offset] & 0xFF)
                 | (((long) data[offset + 1] & 0xFF) << 8)
                 | (((long) data[offset + 2] & 0xFF) << 16)
@@ -129,11 +316,7 @@ public class GPTParser {
                 | (((long) data[offset + 7] & 0xFF) << 56);
     }
 
-    /**
-     * Stores important GPT header information.
-     */
     public static class GPTHeader {
-
         private final long revision;
         private final long headerSize;
         private final long currentLBA;
@@ -153,9 +336,7 @@ public class GPTParser {
                 long lastUsableLBA,
                 long partitionEntryStartLBA,
                 long numberOfPartitionEntries,
-                long sizeOfPartitionEntry
-        ) {
-
+                long sizeOfPartitionEntry) {
             this.revision = revision;
             this.headerSize = headerSize;
             this.currentLBA = currentLBA;
@@ -167,40 +348,67 @@ public class GPTParser {
             this.sizeOfPartitionEntry = sizeOfPartitionEntry;
         }
 
-        public long getRevision() {
-            return revision;
+        public long getRevision() { return revision; }
+        public long getHeaderSize() { return headerSize; }
+        public long getCurrentLBA() { return currentLBA; }
+        public long getBackupLBA() { return backupLBA; }
+        public long getFirstUsableLBA() { return firstUsableLBA; }
+        public long getLastUsableLBA() { return lastUsableLBA; }
+        public long getPartitionEntryStartLBA() { return partitionEntryStartLBA; }
+        public long getNumberOfPartitionEntries() { return numberOfPartitionEntries; }
+        public long getSizeOfPartitionEntry() { return sizeOfPartitionEntry; }
+    }
+
+    public static final class GPTPartitionEntry {
+        private final int partitionNumber;
+        private final String typeGuid;
+        private final String uniqueGuid;
+        private final long firstLBA;
+        private final long lastLBA;
+        private final long sectorCount;
+        private final long attributes;
+        private final String name;
+
+        public GPTPartitionEntry(
+                int partitionNumber,
+                String typeGuid,
+                String uniqueGuid,
+                long firstLBA,
+                long lastLBA,
+                long sectorCount,
+                long attributes,
+                String name) {
+            this.partitionNumber = partitionNumber;
+            this.typeGuid = typeGuid;
+            this.uniqueGuid = uniqueGuid;
+            this.firstLBA = firstLBA;
+            this.lastLBA = lastLBA;
+            this.sectorCount = sectorCount;
+            this.attributes = attributes;
+            this.name = name;
         }
 
-        public long getHeaderSize() {
-            return headerSize;
-        }
+        public int getPartitionNumber() { return partitionNumber; }
+        public String getTypeGuid() { return typeGuid; }
+        public String getUniqueGuid() { return uniqueGuid; }
+        public long getFirstLBA() { return firstLBA; }
+        public long getLastLBA() { return lastLBA; }
+        public long getSectorCount() { return sectorCount; }
+        public long getAttributes() { return attributes; }
+        public String getName() { return name; }
 
-        public long getCurrentLBA() {
-            return currentLBA;
-        }
-
-        public long getBackupLBA() {
-            return backupLBA;
-        }
-
-        public long getFirstUsableLBA() {
-            return firstUsableLBA;
-        }
-
-        public long getLastUsableLBA() {
-            return lastUsableLBA;
-        }
-
-        public long getPartitionEntryStartLBA() {
-            return partitionEntryStartLBA;
-        }
-
-        public long getNumberOfPartitionEntries() {
-            return numberOfPartitionEntries;
-        }
-
-        public long getSizeOfPartitionEntry() {
-            return sizeOfPartitionEntry;
+        @Override
+        public String toString() {
+            return "GPTPartitionEntry{"
+                    + "partitionNumber=" + partitionNumber
+                    + ", typeGuid='" + typeGuid + '\''
+                    + ", uniqueGuid='" + uniqueGuid + '\''
+                    + ", firstLBA=" + firstLBA
+                    + ", lastLBA=" + lastLBA
+                    + ", sectorCount=" + sectorCount
+                    + ", attributes=" + attributes
+                    + ", name='" + name + '\''
+                    + '}';
         }
     }
 }

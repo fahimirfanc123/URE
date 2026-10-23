@@ -1,0 +1,173 @@
+
+package core.disk;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+
+/**
+ * Read-only sector access for disk images and device files.
+ *
+ * The optional base offset allows a partition to be viewed as an
+ * independent filesystem volume while retaining the original image.
+ */
+public class SectorReader implements Closeable {
+
+    private static final int DEFAULT_SECTOR_SIZE = 512;
+
+    private final RandomAccessFile file;
+    private final int sectorSize;
+    private final long totalSectors;
+    private final long baseOffsetBytes;
+    private final long totalBytes;
+
+    public SectorReader(String path) throws IOException {
+        this(path, DEFAULT_SECTOR_SIZE, 0L);
+    }
+
+    public SectorReader(String path, int sectorSize) throws IOException {
+        this(path, sectorSize, 0L);
+    }
+
+    /**
+     * Opens a read-only view starting at a byte offset in the image.
+     *
+     * @param path image or device path
+     * @param sectorSize sector size in bytes
+     * @param baseOffsetBytes starting byte offset of this view
+     */
+    public SectorReader(
+            String path,
+            int sectorSize,
+            long baseOffsetBytes
+    ) throws IOException {
+
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("Path cannot be empty");
+        }
+        if (sectorSize <= 0) {
+            throw new IllegalArgumentException(
+                    "Sector size must be positive"
+            );
+        }
+        if (baseOffsetBytes < 0) {
+            throw new IllegalArgumentException(
+                    "Base offset cannot be negative"
+            );
+        }
+
+        RandomAccessFile opened = new RandomAccessFile(path, "r");
+        long length;
+
+        try {
+            length = opened.length();
+
+            if (baseOffsetBytes > length) {
+                throw new IllegalArgumentException(
+                        "Base offset exceeds image size"
+                );
+            }
+        } catch (IOException | RuntimeException e) {
+            try {
+                opened.close();
+            } catch (IOException closeError) {
+                e.addSuppressed(closeError);
+            }
+            throw e;
+        }
+
+        this.file = opened;
+        this.sectorSize = sectorSize;
+        this.baseOffsetBytes = baseOffsetBytes;
+        this.totalBytes = length - baseOffsetBytes;
+        this.totalSectors = totalBytes / sectorSize;
+    }
+
+    /**
+     * Reads one sector relative to this reader's base offset.
+     */
+    public synchronized byte[] readSector(long sectorNumber)
+            throws IOException {
+
+        checkRange(sectorNumber, 1);
+
+        byte[] buffer = new byte[sectorSize];
+        file.seek(absolutePosition(sectorNumber));
+        file.readFully(buffer);
+
+        return buffer;
+    }
+
+    /**
+     * Reads consecutive sectors relative to this reader's base offset.
+     */
+    public synchronized byte[] readSectors(
+            long startSector,
+            int count
+    ) throws IOException {
+
+        if (count <= 0) {
+            throw new IllegalArgumentException(
+                    "Count must be positive"
+            );
+        }
+
+        checkRange(startSector, count);
+
+        long bytesToRead = (long) sectorSize * count;
+        if (bytesToRead > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "Requested read is too large"
+            );
+        }
+
+        byte[] buffer = new byte[(int) bytesToRead];
+        file.seek(absolutePosition(startSector));
+        file.readFully(buffer);
+
+        return buffer;
+    }
+
+    private void checkRange(long startSector, int count) {
+        if (startSector < 0
+                || startSector > totalSectors
+                || count > totalSectors - startSector) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Sector range %d-%d out of bounds (0-%d)",
+                            startSector,
+                            startSector + (long) count - 1,
+                            totalSectors - 1
+                    )
+            );
+        }
+    }
+
+    private long absolutePosition(long sectorNumber) {
+        return baseOffsetBytes + sectorNumber * (long) sectorSize;
+    }
+
+    public long getTotalSectors() {
+        return totalSectors;
+    }
+
+    public int getSectorSize() {
+        return sectorSize;
+    }
+
+    /**
+     * Returns the remaining byte length visible through this reader.
+     */
+    public long getTotalBytes() {
+        return totalBytes;
+    }
+
+    public long getBaseOffsetBytes() {
+        return baseOffsetBytes;
+    }
+
+    @Override
+    public synchronized void close() throws IOException {
+        file.close();
+    }
+}

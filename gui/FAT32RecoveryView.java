@@ -31,7 +31,9 @@ public class FAT32RecoveryView extends VBox {
     private final File source;
     private final Runnable onBack;
 
-    private final VBox filesContainer;
+    private final long partitionOffsetBytes;
+    private final long partitionLengthBytes;
+private final VBox filesContainer;
     private final Label statusLabel;
     private final Button exitButton;
     private final ProgressIndicator loadingIndicator;
@@ -41,10 +43,37 @@ public class FAT32RecoveryView extends VBox {
             File source,
             Runnable onBack
     ) {
+        this(stage, source, onBack, 0L, 0L);
+    }
+
+    public FAT32RecoveryView(
+            Stage stage,
+            File source,
+            Runnable onBack,
+            long partitionOffsetBytes,
+            long partitionLengthBytes
+    ) {
+        if (stage == null || source == null) {
+            throw new IllegalArgumentException(
+                    "Stage and source cannot be null"
+            );
+        }
+        if (partitionOffsetBytes < 0 || partitionLengthBytes < 0) {
+            throw new IllegalArgumentException(
+                    "Partition offset and length cannot be negative"
+            );
+        }
+        if (partitionLengthBytes == 0 && partitionOffsetBytes != 0) {
+            throw new IllegalArgumentException(
+                    "A nonzero partition offset requires a positive length"
+            );
+        }
 
         this.stage = stage;
         this.source = source;
         this.onBack = onBack;
+        this.partitionOffsetBytes = partitionOffsetBytes;
+        this.partitionLengthBytes = partitionLengthBytes;
 
         exitButton = new Button("EXIT");
         exitButton.getStyleClass().add("ure-exit-button");
@@ -251,6 +280,19 @@ public class FAT32RecoveryView extends VBox {
      * =============================================================
      */
 
+    private SectorReader openSourceReader()
+            throws java.io.IOException {
+        if (partitionLengthBytes > 0) {
+            return new SectorReader(
+                    source.getAbsolutePath(),
+                    512,
+                    partitionOffsetBytes,
+                    partitionLengthBytes
+            );
+        }
+        return new SectorReader(source.getAbsolutePath());
+    }
+
     private void startDeletedFileScan() {
 
         Task<List<FAT32DirectoryEntry>> task =
@@ -260,10 +302,7 @@ public class FAT32RecoveryView extends VBox {
                     protected List<FAT32DirectoryEntry> call()
                             throws Exception {
 
-                        try (SectorReader reader =
-                                     new SectorReader(
-                                             source.getAbsolutePath()
-                                     )) {
+                        try (SectorReader reader = openSourceReader()) {
 
                             FAT32BootSector boot =
                                     FAT32BootSector.parse(
@@ -588,10 +627,7 @@ public class FAT32RecoveryView extends VBox {
                     protected Path call()
                             throws Exception {
 
-                        try (SectorReader reader =
-                                     new SectorReader(
-                                             source.getAbsolutePath()
-                                     )) {
+                        try (SectorReader reader = openSourceReader()) {
 
                             FAT32BootSector boot =
                                     FAT32BootSector.parse(

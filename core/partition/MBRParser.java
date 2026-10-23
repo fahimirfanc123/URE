@@ -3,60 +3,148 @@ package core.partition;
 import core.disk.SectorReader;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * MBRParser is responsible for parsing and validating Master Boot Record (MBR) partition tables.
- *
- * Located at Sector 0 (LBA 0) of an MBR-partitioned storage device, the MBR contains boot code,
- * a 4-entry partition table, and a 2-byte boot signature (0x55, 0xAA) at the end of the sector.
- *
- * This class provides methods to verify the integrity and presence of an MBR on the underlying disk.
+ * Validates MBR signatures and parses primary partition entries.
  */
 public class MBRParser {
 
-    /**
-     * Byte offset within Sector 0 where the 2-byte MBR boot signature is located.
-     */
     private static final int MBR_SIGNATURE_OFFSET = 510;
+    private static final int PARTITION_TABLE_OFFSET = 446;
+    private static final int PARTITION_ENTRY_SIZE = 16;
+    private static final int PARTITION_ENTRY_COUNT = 4;
 
     private final SectorReader sectorReader;
 
-    /**
-     * Constructs an MBRParser backed by a SectorReader.
-     *
-     * @param sectorReader The SectorReader providing raw sector access to the disk image or drive
-     */
     public MBRParser(SectorReader sectorReader) {
         if (sectorReader == null) {
-            throw new IllegalArgumentException("SectorReader cannot be null");
+            throw new IllegalArgumentException(
+                    "SectorReader cannot be null"
+            );
         }
+
         this.sectorReader = sectorReader;
     }
 
     /**
-     * Validates whether Sector 0 contains a valid MBR boot signature (0x55 0xAA).
-     *
-     * The signature is stored as a little-endian word 0xAA55, which appears as:
-     * - byte 510: 0x55
-     * - byte 511: 0xAA
-     *
-     * @return true if the disk contains a valid MBR signature at Sector 0, false otherwise
-     * @throws IOException If reading Sector 0 fails
+     * Checks for the standard MBR signature at bytes 510-511.
      */
     public boolean hasValidSignature() throws IOException {
-        // Ensure disk has at least 1 sector and sector size is at least 512 bytes
-        if (sectorReader.getTotalSectors() < 1 || sectorReader.getSectorSize() < 512) {
+        if (sectorReader.getTotalSectors() < 1
+                || sectorReader.getSectorSize() < 512) {
             return false;
         }
 
-        // Read Sector 0 (LBA 0) where the MBR resides
         byte[] sector = sectorReader.readSector(0);
 
-        // Convert signed bytes to unsigned ints (0-255) for accurate hex comparison
-        int firstByte = sector[MBR_SIGNATURE_OFFSET] & 0xFF;
-        int secondByte = sector[MBR_SIGNATURE_OFFSET + 1] & 0xFF;
+        return (sector[510] & 0xFF) == 0x55
+                && (sector[511] & 0xFF) == 0xAA;
+    }
 
-        // Check for standard MBR boot signature (0x55 0xAA)
-        return firstByte == 0x55 && secondByte == 0xAA;
+    /**
+     * Parses non-empty primary MBR partition entries.
+     *
+     * Entries with type 0 or size 0 are skipped. Any non-empty entry
+     * extending beyond the visible image is rejected.
+     */
+    public List<PartitionEntry> readPartitions() throws IOException {
+        if (!hasValidSignature()) {
+            throw new IOException("Invalid MBR signature");
+        }
+
+        byte[] sector = sectorReader.readSector(0);
+        List<PartitionEntry> partitions = new ArrayList<>();
+
+        for (int i = 0; i < PARTITION_ENTRY_COUNT; i++) {
+            int offset = PARTITION_TABLE_OFFSET
+                    + i * PARTITION_ENTRY_SIZE;
+
+            int partitionType = sector[offset + 4] & 0xFF;
+            long startLBA = readUnsignedIntLE(sector, offset + 8);
+            long sectorCount = readUnsignedIntLE(sector, offset + 12);
+
+            if (partitionType == 0 || sectorCount == 0) {
+                continue;
+            }
+
+            if (startLBA == 0
+                    || startLBA >= sectorReader.getTotalSectors()
+                    || sectorCount > sectorReader.getTotalSectors()
+                            - startLBA) {
+                throw new IOException(
+                        "Invalid MBR partition range in entry "
+                                + (i + 1)
+                );
+            }
+
+            partitions.add(new PartitionEntry(
+                    i + 1,
+                    partitionType,
+                    startLBA,
+                    sectorCount
+            ));
+        }
+
+        return Collections.unmodifiableList(partitions);
+    }
+
+    private static long readUnsignedIntLE(byte[] data, int offset) {
+        return ((long) data[offset] & 0xFF)
+                | (((long) data[offset + 1] & 0xFF) << 8)
+                | (((long) data[offset + 2] & 0xFF) << 16)
+                | (((long) data[offset + 3] & 0xFF) << 24);
+    }
+
+    /**
+     * Immutable metadata for a primary MBR partition.
+     */
+    public static final class PartitionEntry {
+
+        private final int partitionNumber;
+        private final int partitionType;
+        private final long startLBA;
+        private final long sectorCount;
+
+        public PartitionEntry(
+                int partitionNumber,
+                int partitionType,
+                long startLBA,
+                long sectorCount
+        ) {
+            this.partitionNumber = partitionNumber;
+            this.partitionType = partitionType;
+            this.startLBA = startLBA;
+            this.sectorCount = sectorCount;
+        }
+
+        public int getPartitionNumber() {
+            return partitionNumber;
+        }
+
+        public int getPartitionType() {
+            return partitionType;
+        }
+
+        public long getStartLBA() {
+            return startLBA;
+        }
+
+        public long getSectorCount() {
+            return sectorCount;
+        }
+
+        @Override
+        public String toString() {
+            return "PartitionEntry{"
+                    + "partitionNumber=" + partitionNumber
+                    + ", partitionType=0x"
+                    + Integer.toHexString(partitionType)
+                    + ", startLBA=" + startLBA
+                    + ", sectorCount=" + sectorCount
+                    + '}';
+        }
     }
 }

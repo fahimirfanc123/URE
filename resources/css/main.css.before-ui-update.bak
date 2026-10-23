@@ -1,0 +1,2563 @@
+/* =========================================================
+   MINION URE
+   MAIN APPLICATION THEME
+========================================================= */
+
+.root {
+
+    -fx-background-color:
+        linear-gradient(
+            to bottom,
+            #070B14,
+            #0B1020 58%,
+            #0C1424
+        );
+
+    -fx-font-family:
+        "Segoe UI",
+        "Ubuntu",
+        "Arial";
+}
+
+
+/* =========================================================
+   MAIN LAYOUT
+========================================================= */
+
+.layout {
+
+    -fx-background-color:
+        linear-gradient(
+            to bottom,
+            #070B14,
+            #0A101D 58%,
+            #0B1424
+        );
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.top-bar {
+
+    -fx-padding:
+        8 10 8 16;
+
+    -fx-background-color:
+        rgba(
+            7,
+            11,
+            20,
+            0.97
+        );
+
+    -fx-border-color:
+        transparent
+        transparent
+        rgba(
+            255,
+            255,
+            255,
+            0.055
+        )
+        transparent;
+
+    -fx-border-width:
+        0 0 1 0;    
+}
+
+
+/* =========================================================
+   MINI LOGO
+========================================================= */
+
+.mini-logo {
+
+    -fx-min-width:
+        30px;
+
+    -fx-min-height:
+        30px;
+
+    -fx-alignment:
+        center;
+
+    -fx-background-color:
+        linear-gradient(
+            to bottom right,
+            #E95420,
+            #A63B18
+        );
+
+    -fx-background-radius:
+        7px;
+
+    -fx-border-radius:
+        7px;
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.10
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        15px;
+
+    -fx-font-weight:
+        900;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.brand {
+
+    -fx-text-fill:
+        #F5F7FB;
+
+    -fx-font-size:
+        12px;
+
+    -fx-font-weight:
+        900;
+}
+
+
+.brand-subtitle {
+
+    -fx-text-fill:
+        #586A82;
+
+    -fx-font-size:
+        7px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.nav-label {
+
+    -fx-text-fill:
+        #718198;
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+.nav-arrow {
+
+    -fx-text-fill:
+        #E95420;
+
+    -fx-font-size:
+        15px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   WINDOW BUTTONS
+========================================================= */
+
+.window-button {
+    -fx-min-width: 44px;
+    -fx-pref-width: 44px;
+    -fx-max-width: 44px;
+
+    -fx-min-height: 34px;
+    -fx-pref-height: 34px;
+    -fx-max-height: 34px;
+
+    -fx-padding: 0;
+
+    -fx-background-color: transparent;
+    -fx-background-radius: 7px;
+
+    -fx-border-color: transparent;
+    -fx-border-radius: 7px;
+
+    -fx-text-fill: #8997AA;
+
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+
+    -fx-cursor: none;
+}
+
+.minimize-button:hover,
+.maximize-button:hover {
+    -fx-background-color: rgba(233,84,32,0.14);
+    -fx-text-fill: #E95420;
+}
+
+.close-button:hover {
+    -fx-background-color: #C42B1C;
+    -fx-text-fill: white;
+}
+
+.window-button:pressed {
+    -fx-background-color: rgba(233,84,32,0.28);
+}
+
+/* =========================================================
+   HOME HERO
+========================================================= */
+
+.hero {
+
+    -fx-padding:
+        30 40 30 40;
+
+    -fx-spacing:
+        18;
+
+    -fx-background-color:
+        transparent;
+}
+
+
+/* =========================================================
+   VERSION
+========================================================= */
+
+.version {
+
+    -fx-text-fill:
+        #75859B;
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+.beta {
+
+    -fx-padding:
+        3 7 3 7;
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.12
+        );
+
+    -fx-background-radius:
+        4px;
+
+    -fx-text-fill:
+        #E95420;
+
+    -fx-font-size:
+        8px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   HERO LOGO
+========================================================= */
+
+.hero-logo {
+
+    -fx-min-width:
+        72px;
+
+    -fx-min-height:
+        72px;
+
+    -fx-alignment:
+        center;
+
+    -fx-background-color:
+        linear-gradient(
+            to bottom right,
+            #E95420,
+            #9E3516
+        );
+
+    -fx-background-radius:
+        18px;
+
+    -fx-border-radius:
+        18px;
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.11
+        );
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(
+                233,
+                84,
+                32,
+                0.22
+            ),
+            25,
+            0.2,
+            0,
+            8
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        34px;
+
+    -fx-font-weight:
+        900;
+}
+
+
+/* =========================================================
+   MAIN TITLE
+========================================================= */
+
+.title {
+
+    -fx-text-fill:
+        #F8FAFC;
+
+    -fx-font-size:
+        40px;
+
+    -fx-font-weight:
+        900;
+}
+
+
+.subtitle {
+
+    -fx-text-fill:
+        #8493A7;
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-letter-spacing:
+        2px;
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.divider {
+
+    -fx-min-height:
+        1px;
+
+    -fx-max-height:
+        1px;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            transparent,
+            rgba(
+                233,
+                84,
+                32,
+                0.55
+            ),
+            transparent
+        );
+}
+
+
+/* =========================================================
+   TAGLINE
+========================================================= */
+
+.tagline {
+
+    -fx-text-fill:
+        #66778E;
+
+    -fx-font-size:
+        11px;
+}
+
+
+/* =========================================================
+   FEATURE CARDS
+========================================================= */
+
+.feature-card {
+
+    -fx-pref-width:
+        175px;
+
+    -fx-pref-height:
+        105px;
+
+    -fx-padding:
+        15;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    -fx-background-radius:
+        10px;
+
+    -fx-border-radius:
+        10px;
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.065
+        );
+
+    -fx-border-width:
+        1px;
+}
+
+
+.feature-card:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.055
+        );
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.33
+        );
+
+    -fx-translate-y:
+        -2px;
+}
+
+
+.card-icon {
+
+    -fx-text-fill:
+        #E95420;
+
+    -fx-font-size:
+        23px;
+}
+
+
+.card-title {
+
+    -fx-text-fill:
+        #E7EBF2;
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+.card-subtitle {
+
+    -fx-text-fill:
+        #67778C;
+
+    -fx-font-size:
+        9px;
+}
+
+
+/* =========================================================
+   START BUTTON
+========================================================= */
+
+.start-button {
+
+    -fx-padding:
+        13 28 13 28;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #5E2750,
+            #772953
+        );
+
+    -fx-background-radius:
+        9px;
+
+    -fx-border-radius:
+        9px;
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.38
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.start-button:hover {
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #772953,
+            #99365E
+        );
+
+    -fx-border-color:
+        #E95420;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(
+                233,
+                84,
+                32,
+                0.20
+            ),
+            20,
+            0.1,
+            0,
+            5
+        );
+}
+
+
+.start-button:pressed {
+
+    -fx-scale-x:
+        0.98;
+
+    -fx-scale-y:
+        0.98;
+}
+
+
+/* =========================================================
+   BOTTOM BAR
+========================================================= */
+
+.bottom-bar {
+
+    -fx-padding:
+        0 16 0 16;
+
+    -fx-background-color:
+        rgba(
+            6,
+            10,
+            18,
+            0.82
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.045
+        )
+        transparent
+        transparent
+        transparent;
+
+    -fx-border-width:
+        1 0 0 0;
+}
+
+
+.pulse {
+
+    -fx-text-fill:
+        #4DDB81;
+
+    -fx-font-size:
+        9px;
+}
+
+
+.footer-text {
+
+    -fx-text-fill:
+        #536278;
+
+    -fx-font-size:
+        8px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   MODULE 2 — DRIVE SELECTION
+========================================================= */
+
+.drive-page {
+
+    -fx-padding:
+        24 40 30 40;
+
+    -fx-spacing:
+        18;
+
+    -fx-background-color:
+        transparent;
+}
+
+
+/* =========================================================
+   DRIVE PAGE HEADER
+========================================================= */
+
+.drive-step-label {
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #697A92;
+}
+
+
+.drive-secondary-button {
+
+    -fx-padding:
+        8 14 8 14;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.035
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    -fx-border-radius:
+        7px;
+
+    -fx-background-radius:
+        7px;
+
+    -fx-text-fill:
+        #97A5B9;
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.drive-secondary-button:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.12
+        );
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.50
+        );
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   DRIVE PAGE TITLE
+========================================================= */
+
+.drive-page-title {
+
+    -fx-font-size:
+        28px;
+
+    -fx-font-weight:
+        900;
+
+    -fx-text-fill:
+        #F8FAFC;
+}
+
+
+.drive-page-subtitle {
+
+    -fx-font-size:
+        12px;
+
+    -fx-text-fill:
+        #7F90A7;
+}
+
+
+/* =========================================================
+   DRIVE PANELS
+========================================================= */
+
+.drive-panel {
+
+    -fx-padding:
+        20;
+
+    -fx-spacing:
+        14;
+
+    -fx-background-color:
+        rgba(
+            12,
+            18,
+            30,
+            0.82
+        );
+
+    -fx-border-color:
+        rgba(
+            120,
+            136,
+            158,
+            0.18
+        );
+
+    -fx-border-width:
+        1px;
+
+    -fx-border-radius:
+        12px;
+
+    -fx-background-radius:
+        12px;
+}
+
+
+.drive-panel-title {
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #9AABC1;
+}
+
+
+.drive-status {
+
+    -fx-padding:
+        4 8 4 8;
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.12
+        );
+
+    -fx-background-radius:
+        5px;
+
+    -fx-text-fill:
+        #E95420;
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+}
+
+
+/* =========================================================
+   DRIVE LIST
+========================================================= */
+
+.drive-list {
+
+    -fx-spacing:
+        10;
+}
+
+
+.drive-card {
+
+    -fx-padding:
+        14 16 14 16;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.06
+        );
+
+    -fx-border-radius:
+        9px;
+
+    -fx-background-radius:
+        9px;
+
+    -fx-cursor:
+        none;
+}
+
+
+.drive-card:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.07
+        );
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.45
+        );
+
+    -fx-translate-x:
+        2px;
+}
+
+
+.drive-card-icon {
+
+    -fx-font-size:
+        27px;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+.drive-card-name {
+
+    -fx-font-size:
+        13px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #F1F5F9;
+}
+
+
+.drive-card-path {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #708198;
+}
+
+
+.drive-card-storage {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #8493A7;
+}
+
+
+.drive-select-label {
+
+    -fx-font-size:
+        9px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   SELECTED DRIVE
+========================================================= */
+
+.selected-drive-icon {
+
+    -fx-font-size:
+        48px;
+
+    -fx-text-fill:
+        #FFD91A;
+}
+
+
+.selected-drive-name {
+
+    -fx-font-size:
+        17px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #F8FAFC;
+}
+
+
+.selected-drive-path {
+
+    -fx-font-size:
+        11px;
+
+    -fx-text-fill:
+        #78889E;
+}
+
+
+.selected-drive-size {
+
+    -fx-font-size:
+        10px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   DRIVE DIVIDER
+========================================================= */
+
+.drive-divider {
+
+    -fx-min-height:
+        1px;
+
+    -fx-max-height:
+        1px;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+}
+
+
+/* =========================================================
+   HELP TEXT
+========================================================= */
+
+.drive-help-text {
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #7C8CA2;
+}
+
+
+/* =========================================================
+   DISK IMAGE BUTTON
+========================================================= */
+
+.image-button {
+
+    -fx-padding:
+        10 15 10 15;
+
+    -fx-background-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.04
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            255,
+            255,
+            0.09
+        );
+
+    -fx-border-radius:
+        8px;
+
+    -fx-background-radius:
+        8px;
+
+    -fx-text-fill:
+        #AEB9C8;
+
+    -fx-font-size:
+        11px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.image-button:hover {
+
+    -fx-background-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.08
+        );
+
+    -fx-border-color:
+        #E95420;
+
+    -fx-text-fill:
+        #E95420;
+}
+
+
+/* =========================================================
+   CONTINUE SCAN BUTTON
+========================================================= */
+
+.scan-button {
+
+    -fx-padding:
+        13 20 13 20;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #5E2750,
+            #772953
+        );
+
+    -fx-background-radius:
+        9px;
+
+    -fx-border-radius:
+        9px;
+
+    -fx-border-color:
+        rgba(
+            233,
+            84,
+            32,
+            0.35
+        );
+
+    -fx-text-fill:
+        white;
+
+    -fx-font-size:
+        12px;
+
+    -fx-font-weight:
+        bold;
+
+    -fx-cursor:
+        none;
+}
+
+
+.scan-button:hover {
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #772953,
+            #963758
+        );
+
+    -fx-border-color:
+        #E95420;
+}
+
+
+.scan-button:pressed {
+
+    -fx-scale-x:
+        0.97;
+
+    -fx-scale-y:
+        0.97;
+}
+
+
+.scan-button:disabled {
+
+    -fx-opacity:
+        0.35;
+}
+
+
+/* =========================================================
+   WARNING
+========================================================= */
+
+.drive-warning {
+
+    -fx-padding:
+        11 15 11 15;
+
+    -fx-background-color:
+        rgba(
+            255,
+            217,
+            26,
+            0.045
+        );
+
+    -fx-border-color:
+        rgba(
+            255,
+            217,
+            26,
+            0.15
+        );
+
+    -fx-border-radius:
+        8px;
+
+    -fx-background-radius:
+        8px;
+
+    -fx-font-size:
+        10px;
+
+    -fx-text-fill:
+        #A9A381;
+}
+
+/* =========================================================
+   MODULE 3 — SCANNING
+========================================================= */
+
+.scan-page {
+    -fx-padding: 18 32 18 32;
+    -fx-spacing: 12;
+    -fx-background-color: transparent;
+}
+
+
+/* =========================================================
+   PAGE TITLE
+========================================================= */
+
+.scan-page-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F8FAFC;
+}
+
+.scan-page-subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #B8C2D1;
+}
+
+
+/* =========================================================
+   LIVE STATUS
+========================================================= */
+
+.scan-live {
+    -fx-padding: 6 11 6 11;
+
+    -fx-background-color:
+        rgba(77, 219, 129, 0.14);
+
+    -fx-background-radius: 6;
+
+    -fx-border-color:
+        rgba(77, 219, 129, 0.30);
+
+    -fx-border-radius: 6;
+
+    -fx-text-fill: #63E18F;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+
+/* =========================================================
+   SOURCE PANEL
+========================================================= */
+
+.scan-source-panel {
+    -fx-padding: 18 22 18 22;
+
+    -fx-background-color:
+        rgba(18, 24, 38, 0.96);
+
+    -fx-border-color:
+        rgba(148, 163, 184, 0.22);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.24),
+            12,
+            0.18,
+            0,
+            4
+        );
+}
+
+.scan-small-title {
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #93A4B8;
+}
+
+.scan-source-name {
+    -fx-font-size: 17px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #FFFFFF;
+}
+
+.scan-source-path {
+    -fx-font-size: 11px;
+    -fx-text-fill: #AAB7C8;
+}
+
+
+/* =========================================================
+   PROGRESS PANEL
+========================================================= */
+
+.scan-progress-panel {
+    -fx-padding: 24;
+
+    -fx-background-color:
+        rgba(18, 24, 38, 0.98);
+
+    -fx-border-color:
+        rgba(233, 84, 32, 0.35);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.30),
+            16,
+            0.20,
+            0,
+            5
+        );
+}
+
+.scan-status {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #F1F5F9;
+}
+
+.scan-percent {
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FF7A45;
+}
+
+
+/* =========================================================
+   PROFESSIONAL PROGRESS BAR
+========================================================= */
+
+.scan-progress-bar {
+    -fx-pref-height: 11px;
+    -fx-min-height: 11px;
+    -fx-max-height: 11px;
+}
+
+.scan-progress-bar > .track {
+    -fx-background-color:
+        rgba(255,255,255,0.08);
+
+    -fx-background-radius: 10;
+
+    -fx-border-color:
+        rgba(255,255,255,0.05);
+
+    -fx-border-radius: 10;
+}
+
+.scan-progress-bar > .bar {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #6A1B4D,
+            #B33A3A,
+            #E95420,
+            #FF7A45
+        );
+
+    -fx-background-radius: 10;
+
+    -fx-background-insets: 0;
+}
+
+
+/* =========================================================
+   CURRENT SECTOR
+========================================================= */
+
+.scan-detail-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #9DABBC;
+}
+
+.scan-detail-value {
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #E2E8F0;
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.scan-stat-card {
+    -fx-padding: 18 17 18 17;
+
+    -fx-background-color:
+        rgba(20, 27, 42, 0.96);
+
+    -fx-border-color:
+        rgba(148, 163, 184, 0.16);
+
+    -fx-border-width: 1;
+
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(0,0,0,0.20),
+            8,
+            0.12,
+            0,
+            3
+        );
+}
+
+.scan-stat-card:hover {
+    -fx-background-color:
+        rgba(35, 42, 58, 0.98);
+
+    -fx-border-color:
+        rgba(233,84,32,0.36);
+}
+
+.scan-stat-title {
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #A2AFBF;
+}
+
+.scan-stat-value {
+    -fx-font-size: 21px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+
+/* =========================================================
+   INFO BAR
+========================================================= */
+
+.scan-information {
+    -fx-padding: 12 16 12 16;
+
+    -fx-background-color:
+        rgba(77, 219, 129, 0.07);
+
+    -fx-border-color:
+        rgba(77, 219, 129, 0.20);
+
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 600;
+
+    -fx-text-fill: #A9DAB9;
+}
+
+
+/* =========================================================
+   CANCEL
+========================================================= */
+
+.scan-cancel-button {
+    -fx-padding: 11 18 11 18;
+
+    -fx-background-color:
+        rgba(255,255,255,0.055);
+
+    -fx-border-color:
+        rgba(255,255,255,0.12);
+
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-text-fill: #D1D9E4;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+
+    -fx-cursor: none;
+}
+
+.scan-cancel-button:hover {
+    -fx-background-color:
+        rgba(220, 60, 60, 0.16);
+
+    -fx-border-color:
+        rgba(235, 90, 90, 0.50);
+
+    -fx-text-fill: #FF9B9B;
+}
+
+
+/* =========================================================
+   RESULTS
+========================================================= */
+
+.scan-results-button {
+    -fx-padding: 12 22 12 22;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #6A1B4D,
+            #8A2E55,
+            #E95420
+        );
+
+    -fx-background-radius: 8;
+
+    -fx-border-radius: 8;
+
+    -fx-border-color:
+        rgba(255, 122, 69, 0.50);
+
+    -fx-text-fill: #FFFFFF;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+
+    -fx-cursor: none;
+
+    -fx-effect:
+        dropshadow(
+            gaussian,
+            rgba(233,84,32,0.22),
+            8,
+            0.20,
+            0,
+            2
+        );
+}
+
+.scan-results-button:hover {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #7C2559,
+            #A3395F,
+            #FF6A2D
+        );
+
+    -fx-border-color: #FF7A45;
+}
+
+.scan-results-button:disabled {
+    -fx-opacity: 0.38;
+}
+
+
+/* =========================================================
+   ERRORS
+========================================================= */
+
+.scan-error {
+    -fx-text-fill: #FF8A8A;
+}
+
+
+
+/* =========================================================
+   MODULE 4 — SCAN RESULTS
+========================================================= */
+
+.results-page {
+    -fx-padding: 28 44 32 44;
+    -fx-spacing: 18;
+    -fx-background-color: transparent;
+}
+
+
+/* STATUS */
+
+.results-complete {
+    -fx-padding: 6 11 6 11;
+    -fx-background-color: rgba(77,219,129,0.12);
+    -fx-border-color: rgba(77,219,129,0.30);
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-text-fill: #63E18F;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+
+/* TITLE */
+
+.results-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F8FAFC;
+}
+
+.results-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #AAB6C7;
+}
+
+
+/* SOURCE */
+
+.results-source-panel {
+    -fx-padding: 18 22 18 22;
+    -fx-background-color: rgba(18,24,38,0.96);
+    -fx-border-color: rgba(148,163,184,0.20);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-small-label {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8D9CAF;
+}
+
+.results-source-name {
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+.results-source-path {
+    -fx-font-size: 10px;
+    -fx-text-fill: #9AA8BA;
+}
+
+
+/* STAT CARDS */
+
+.results-stat-card {
+    -fx-padding: 17;
+    -fx-background-color: rgba(18,24,38,0.96);
+    -fx-border-color: rgba(148,163,184,0.15);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.results-stat-card:hover {
+    -fx-background-color: rgba(31,39,55,0.98);
+    -fx-border-color: rgba(233,84,32,0.35);
+}
+
+.results-stat-title {
+    -fx-font-size: 8px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #91A0B3;
+}
+
+.results-stat-value {
+    -fx-font-size: 21px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FFFFFF;
+}
+
+.results-stat-detail {
+    -fx-font-size: 9px;
+    -fx-text-fill: #E95420;
+}
+
+
+/* ANALYSIS PANEL */
+
+.results-summary-panel {
+    -fx-padding: 20;
+    -fx-spacing: 13;
+    -fx-background-color: rgba(18,24,38,0.94);
+    -fx-border-color: rgba(148,163,184,0.15);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #F1F5F9;
+}
+
+.results-row-name {
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8998AB;
+}
+
+.results-row-value {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #E3E9F2;
+}
+
+
+/* RECOVERY */
+
+.results-recovery-panel {
+    -fx-padding: 18 20 18 20;
+    -fx-background-color: rgba(233,84,32,0.055);
+    -fx-border-color: rgba(233,84,32,0.24);
+    -fx-border-width: 1;
+    -fx-border-radius: 11;
+    -fx-background-radius: 11;
+}
+
+.results-recovery-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #FF8355;
+}
+
+.results-recovery-description {
+    -fx-font-size: 10px;
+    -fx-text-fill: #B8C2D0;
+}
+
+.results-recovery-button {
+    -fx-padding: 12 20 12 20;
+
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #5E2750,
+            #9A3158,
+            #E95420
+        );
+
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+
+    -fx-border-color:
+        rgba(255,122,69,0.50);
+
+    -fx-text-fill: white;
+
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+
+    -fx-cursor: none;
+}
+
+.results-recovery-button:hover {
+    -fx-background-color:
+        linear-gradient(
+            to right,
+            #772953,
+            #B43A59,
+            #FF6C30
+        );
+
+    -fx-border-color: #FF7A45;
+}
+
+.results-recovery-button:disabled {
+    -fx-opacity: 0.30;
+}
+
+
+/* INFO */
+
+.results-information {
+    -fx-padding: 11 15 11 15;
+    -fx-background-color: rgba(77,219,129,0.045);
+    -fx-border-color: rgba(77,219,129,0.15);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+
+    -fx-font-size: 9px;
+    -fx-text-fill: #94BCA2;
+}
+
+
+/* =========================================================
+   MODULE 5 — RECOVERY ANALYSIS
+   ========================================================= */
+
+.recovery-analysis-page {
+    -fx-background-color: #0f1113;
+}
+
+/* top labels */
+
+.recovery-module-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.recovery-analysis-title {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.recovery-analysis-subtitle {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 13px;
+}
+
+/* panels */
+
+.recovery-source-panel,
+.recovery-status-panel,
+.recovery-engine-panel,
+.recovery-stat-card {
+    -fx-background-color: #171a1d;
+    -fx-background-radius: 12px;
+
+    -fx-border-color: #2b3035;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+
+    -fx-padding: 16px;
+}
+
+/* source */
+
+.recovery-small-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.recovery-source-name {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.recovery-source-path {
+    -fx-text-fill: #9ba2a8;
+    -fx-font-size: 11px;
+}
+
+/* status */
+
+.recovery-status {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.recovery-message {
+    -fx-text-fill: #c3c7cb;
+    -fx-font-size: 12px;
+}
+
+/* stat cards */
+
+.recovery-stat-title {
+    -fx-text-fill: #9ba2a8;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.recovery-stat-value {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+}
+
+/* pipeline */
+
+.recovery-pipeline {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.recovery-engine-info {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 12px;
+}
+
+/* progress indicator */
+
+.recovery-analysis-page .progress-indicator {
+    -fx-progress-color: #e95420;
+}
+
+.recovery-analysis-page .progress-indicator .percentage {
+    -fx-fill: #f4f4f4;
+}
+
+/* buttons */
+
+.recovery-back-button,
+.recovery-continue-button {
+    -fx-background-radius: 9px;
+    -fx-padding: 10px 22px;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-cursor: hand;
+}
+
+/* back button */
+
+.recovery-back-button {
+    -fx-background-color: #25292d;
+    -fx-text-fill: #f4f4f4;
+
+    -fx-border-color: #343a40;
+    -fx-border-radius: 9px;
+}
+
+.recovery-back-button:hover {
+    -fx-background-color: #30353a;
+}
+
+/* main action */
+
+.recovery-continue-button {
+    -fx-background-color: #e95420;
+    -fx-text-fill: #ffffff;
+}
+
+.recovery-continue-button:hover {
+    -fx-background-color: #ff6733;
+}
+
+.recovery-continue-button:pressed {
+    -fx-background-color: #c94317;
+}
+
+.recovery-continue-button:disabled {
+    -fx-background-color: #46291f;
+    -fx-text-fill: #8d7d77;
+    -fx-opacity: 1;
+}
+
+/* =========================================================
+   MODULE 6 — RECOVERY MODE
+   ========================================================= */
+
+.recovery-mode-page {
+    -fx-background-color: #0f1113;
+}
+
+.recovery-mode-module {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.recovery-mode-title {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.recovery-mode-subtitle {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 13px;
+}
+
+.recovery-mode-source-panel,
+.recovery-mode-status-panel {
+    -fx-background-color: #171a1d;
+    -fx-background-radius: 12px;
+
+    -fx-border-color: #2b3035;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+
+    -fx-padding: 16px;
+}
+
+.recovery-mode-small-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.recovery-mode-source {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.recovery-mode-detected {
+    -fx-text-fill: #adb3b8;
+    -fx-font-size: 12px;
+}
+
+/* recovery cards */
+
+.recovery-option-card-active,
+.recovery-option-card-locked {
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 18px;
+}
+
+.recovery-option-card-active {
+    -fx-background-color: #191c1f;
+    -fx-border-color: #e95420;
+    -fx-border-width: 1px;
+}
+
+.recovery-option-card-locked {
+    -fx-background-color: #151719;
+    -fx-border-color: #292d31;
+    -fx-border-width: 1px;
+}
+
+.recovery-option-title {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.recovery-option-description {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 11px;
+}
+
+.recovery-option-available {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.recovery-option-locked {
+    -fx-text-fill: #6f767c;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+/* raw recovery */
+
+.raw-recovery-button {
+    -fx-background-color: #e95420;
+    -fx-text-fill: white;
+
+    -fx-background-radius: 8px;
+
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+
+    -fx-padding: 9px 15px;
+
+    -fx-cursor: hand;
+}
+
+.raw-recovery-button:hover {
+    -fx-background-color: #ff6733;
+}
+
+.raw-recovery-button:disabled {
+    -fx-opacity: 0.55;
+}
+
+/* status */
+
+.recovery-mode-status {
+    -fx-text-fill: #f4f4f4;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.recovery-mode-page .progress-bar {
+    -fx-accent: #e95420;
+}
+
+/* back */
+
+.recovery-mode-back {
+    -fx-background-color: #25292d;
+    -fx-text-fill: #f4f4f4;
+
+    -fx-border-color: #343a40;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+
+    -fx-padding: 9px 20px;
+
+    -fx-font-weight: bold;
+
+    -fx-cursor: hand;
+}
+
+.recovery-mode-back:hover {
+    -fx-background-color: #30353a;
+}
+
+
+
+
+/* =========================================================
+   MODULE 7 — FAT32 RECOVERY
+   ========================================================= */
+
+.fat32-recovery-page {
+    -fx-background-color: #0f1113;
+}
+
+.fat32-module-label,
+.fat32-small-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.fat32-recovery-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.fat32-recovery-subtitle {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 13px;
+}
+
+.fat32-source-panel {
+    -fx-background-color: #171a1d;
+    -fx-background-radius: 12px;
+    -fx-border-color: #2b3035;
+    -fx-border-radius: 12px;
+    -fx-padding: 15px;
+}
+
+.fat32-source-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.fat32-source-path {
+    -fx-text-fill: #999fa5;
+    -fx-font-size: 11px;
+}
+
+.fat32-status {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.fat32-recovery-page .progress-indicator {
+    -fx-progress-color: #e95420;
+}
+
+.fat32-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.fat32-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.fat32-file-card {
+    -fx-background-color: #181b1e;
+    -fx-background-radius: 11px;
+
+    -fx-border-color: #2b3035;
+    -fx-border-radius: 11px;
+
+    -fx-padding: 16px;
+}
+
+.fat32-file-card:hover {
+    -fx-border-color: #e95420;
+}
+
+.fat32-file-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.fat32-file-info {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 11px;
+}
+
+.fat32-deleted-badge {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+
+    -fx-background-color: #382018;
+    -fx-background-radius: 6px;
+
+    -fx-padding: 4px 8px;
+}
+
+.fat32-recover-button {
+    -fx-background-color: #e95420;
+    -fx-text-fill: #ffffff;
+
+    -fx-background-radius: 8px;
+
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+
+    -fx-padding: 9px 16px;
+
+    -fx-cursor: hand;
+}
+
+.fat32-recover-button:hover {
+    -fx-background-color: #ff6733;
+}
+
+.fat32-recover-button:disabled {
+    -fx-opacity: 0.7;
+}
+
+.fat32-back-button {
+    -fx-background-color: #25292d;
+    -fx-text-fill: #ffffff;
+
+    -fx-background-radius: 8px;
+    -fx-border-color: #343a40;
+    -fx-border-radius: 8px;
+
+    -fx-padding: 9px 20px;
+
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.fat32-back-button:hover {
+    -fx-background-color: #30353a;
+}
+
+.fat32-empty-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.fat32-empty-description,
+.fat32-error {
+    -fx-text-fill: #aeb4ba;
+    -fx-font-size: 12px;
+}
+/* =========================================================
+   NTFS RECOVERY
+   ========================================================= */
+
+.ntfs-recovery-page {
+    -fx-background-color: #0f1113;
+}
+
+.ntfs-module-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-small-label {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-recovery-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-recovery-subtitle {
+    -fx-text-fill: #d0d3d6;
+    -fx-font-size: 13px;
+}
+
+.ntfs-source-panel {
+    -fx-background-color: #171a1d;
+    -fx-background-radius: 12px;
+
+    -fx-border-color: #34393e;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+
+    -fx-padding: 15px;
+}
+
+.ntfs-source-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-source-path {
+    -fx-text-fill: #c5c9cd;
+    -fx-font-size: 11px;
+}
+
+.ntfs-status {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-recovery-page .progress-indicator {
+    -fx-progress-color: #e95420;
+}
+
+
+/* =========================================================
+   SCROLL AREA
+   ========================================================= */
+
+.ntfs-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.ntfs-scroll > .viewport {
+    -fx-background-color: #0f1113;
+}
+
+.ntfs-scroll .corner {
+    -fx-background-color: #0f1113;
+}
+
+
+/* =========================================================
+   FILE CARD
+   ========================================================= */
+
+.ntfs-file-card {
+    -fx-background-color: #191c20;
+    -fx-background-radius: 12px;
+
+    -fx-border-color: #34393e;
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+
+    -fx-padding: 16px;
+}
+
+.ntfs-file-card:hover {
+    -fx-background-color: #1e2226;
+    -fx-border-color: #e95420;
+}
+
+.ntfs-file-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-file-info {
+    -fx-text-fill: #c3c7cb;
+    -fx-font-size: 11px;
+}
+
+
+/* =========================================================
+   DELETED BADGE
+   ========================================================= */
+
+.ntfs-deleted-badge {
+    -fx-text-fill: #ff7948;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+
+    -fx-background-color: #342017;
+    -fx-background-radius: 6px;
+
+    -fx-border-color: #63301f;
+    -fx-border-radius: 6px;
+
+    -fx-padding: 4px 8px;
+}
+
+
+/* =========================================================
+   RECOVER BUTTON
+   ========================================================= */
+
+.ntfs-recover-button {
+    -fx-background-color: #e95420;
+    -fx-text-fill: #ffffff;
+
+    -fx-background-radius: 8px;
+
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+
+    -fx-padding: 9px 16px;
+
+    -fx-cursor: hand;
+}
+
+.ntfs-recover-button:hover {
+    -fx-background-color: #ff6a35;
+}
+
+.ntfs-recover-button:pressed {
+    -fx-background-color: #c94517;
+}
+
+.ntfs-recover-button:disabled {
+    -fx-opacity: 1.0;
+    -fx-background-color: #3f7048;
+    -fx-text-fill: #ffffff;
+}
+
+
+/* =========================================================
+   BACK BUTTON
+   ========================================================= */
+
+.ntfs-back-button {
+    -fx-background-color: #25292d;
+    -fx-text-fill: #ffffff;
+
+    -fx-background-radius: 8px;
+
+    -fx-border-color: #41474d;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+
+    -fx-padding: 9px 20px;
+
+    -fx-cursor: hand;
+}
+
+.ntfs-back-button:hover {
+    -fx-background-color: #30353a;
+    -fx-border-color: #5b6268;
+}
+
+
+/* =========================================================
+   EMPTY / ERROR STATE
+   ========================================================= */
+
+.ntfs-empty-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.ntfs-empty-description {
+    -fx-text-fill: #c3c7cb;
+    -fx-font-size: 12px;
+}
+
+.ntfs-error {
+    -fx-text-fill: #ff7b72;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+/* URE-themed Results ScrollPane */
+.ure-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.ure-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.ure-scroll-pane > .corner {
+    -fx-background-color: #111827;
+}
+
+.ure-scroll-pane .scroll-bar:vertical {
+    -fx-background-color: #111827;
+    -fx-pref-width: 9px;
+    -fx-padding: 2px;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .track {
+    -fx-background-color: #111827;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color: #374151;
+    -fx-background-radius: 8px;
+    -fx-background-insets: 1px;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #06b6d4;
+}
+
+.ure-scroll-pane .scroll-bar:vertical .thumb:pressed {
+    -fx-background-color: #0891b2;
+}
+
+.ure-scroll-pane .scroll-bar .increment-button,
+.ure-scroll-pane .scroll-bar .decrement-button {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.ure-scroll-pane .scroll-bar .increment-arrow,
+.ure-scroll-pane .scroll-bar .decrement-arrow {
+    -fx-padding: 0;
+    -fx-shape: "";
+}

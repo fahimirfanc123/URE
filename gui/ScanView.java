@@ -1,6 +1,7 @@
 package gui;
 
 import core.disk.SectorReader;
+import core.disk.PhysicalDriveDiscovery;
 import core.scan.DiskScanner;
 import gui.ScanView.ScanSummary;
 import javafx.application.Platform;
@@ -531,22 +532,23 @@ public class ScanView extends VBox {
     private void startScan() {
 
         if (!source.isFile()) {
+            boolean safeDevice;
 
-            statusLabel.setText(
-                    "SOURCE NOT SUPPORTED"
-            );
+            try {
+                safeDevice = PhysicalDriveDiscovery.isSelectableDevice(
+                        source.getAbsolutePath()
+                );
+            } catch (java.io.IOException ex) {
+                safeDevice = false;
+            }
 
-            statusLabel
-                    .getStyleClass()
-                    .add("scan-error");
-
-            cancelButton.setText("BACK");
-
-            cancelButton.setOnAction(
-                    event -> onBack.run()
-            );
-
-            return;
+            if (!safeDevice) {
+                statusLabel.setText("DEVICE SAFETY CHECK FAILED");
+                statusLabel.getStyleClass().add("scan-error");
+                cancelButton.setText("BACK");
+                cancelButton.setOnAction(event -> onBack.run());
+                return;
+            }
         }
 
 
@@ -573,6 +575,15 @@ public class ScanView extends VBox {
                         /*
                          * REAL URE BACKEND
                          */
+                        // Revalidate physical devices immediately before opening.
+                        if (!source.isFile()
+                                && !PhysicalDriveDiscovery.isSelectableDevice(
+                                        source.getAbsolutePath())) {
+                            throw new java.io.IOException(
+                                    "Physical device is no longer safe to scan."
+                            );
+                        }
+
                         try (
                                 SectorReader sectorReader =
                                         new SectorReader(
