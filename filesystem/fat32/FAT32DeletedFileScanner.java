@@ -1,3 +1,4 @@
+
 package filesystem.fat32;
 
 import core.disk.SectorReader;
@@ -5,30 +6,31 @@ import core.disk.SectorReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FAT32DeletedFileScanner {
 
-    private static final int DIRECTORY_ENTRY_SIZE = 32;
+    private static final int ENTRY_SIZE = 32;
+    private static final int ATTR_LONG_NAME = 0x0F;
+    private static final int ATTR_VOLUME_LABEL = 0x08;
+    private static final int ATTR_DIRECTORY = 0x10;
+
+    private static final long FAT_MASK = 0x0FFFFFFFL;
+    private static final long EOC_MIN = 0x0FFFFFF8L;
+    private static final long BAD_CLUSTER = 0x0FFFFFF7L;
 
     private final SectorReader reader;
     private final FAT32BootSector bootSector;
 
     public FAT32DeletedFileScanner(
             SectorReader reader,
-            FAT32BootSector bootSector
-    ) {
+            FAT32BootSector bootSector) {
 
-        if (reader == null) {
+        if (reader == null || bootSector == null) {
             throw new IllegalArgumentException(
-                    "SectorReader cannot be null"
-            );
-        }
-
-        if (bootSector == null) {
-            throw new IllegalArgumentException(
-                    "FAT32BootSector cannot be null"
-            );
+                    "Reader and boot sector are required");
         }
 
         this.reader = reader;
@@ -38,153 +40,195 @@ public class FAT32DeletedFileScanner {
     public List<FAT32DirectoryEntry> scanRootDirectory()
             throws IOException {
 
-        List<FAT32DirectoryEntry> deletedFiles =
-                new ArrayList<>();
+        List<FAT32DirectoryEntry> results = new ArrayList<>();
+        Set<Long> visitedDirectoryClusters = new HashSet<>();
 
-        long rootCluster =
-                bootSector.getRootCluster();
+        scanDirectory(
+                bootSector.getRootCluster(),
+                false,
+                results,
+                visitedDirectoryClusters);
 
-        long rootSector =
-                bootSector.clusterToSector(
-                        rootCluster
-                );
-
-        int sectorsPerCluster =
-                bootSector.getSectorsPerCluster();
-
-        for (int i = 0;
-             i < sectorsPerCluster;
-             i++) {
-
-            byte[] sector =
-                    reader.readSector(
-                            rootSector + i
-                    );
-
-            scanDirectorySector(
-                    sector,
-                    deletedFiles
-            );
-        }
-
-        return deletedFiles;
+        return results;
     }
 
-    private void scanDirectorySector(
+    private void scanDirectory(
+            long startCluster,
+            boolean insideDeletedDirectory,
+            List<FAT32DirectoryEntry> results,
+            Set<Long> visitedDirectoryClusters)
+            throws IOException {
+
+        if (startCluster < 2) {
+            return;
+        }
+
+        long cluster = startCluster;
+        Set<Long> chainVisited = new HashSet<>();
+
+        while (cluster >= 2
+                && chainVisited.add(cluster)
+                && visitedDirectoryClusters.add(cluster)) {
+
+            long firstSector = bootSector.clusterToSector(cluster);
+
+            for (int i = 0;
+                 i < bootSector.getSectorsPerCluster();
+                 i++) {
+
+                long sectorNumber = firstSector + i;
+
+                if (sectorNumber < 0
+                        || sectorNumber >= bootSector.getTotalSectors()) {
+                    throw new IOException(
+                            "Directory sector is out of bounds: "
+                                    + sectorNumber);
+                }
+
+                byte[] sector = reader.readSector(sectorNumber);
+
+                boolean endOfDirectory = scanSector(
+                        sector,
+                        insideDeletedDirectory,
+                        results,
+                        visitedDirectoryClusters);
+
+                if (endOfDirectory) {
+                    return;
+                }
+            }
+
+            cluster = readNextCluster(cluster);
+        }
+    }
+
+    private boolean scanSector(
             byte[] sector,
-            List<FAT32DirectoryEntry> deletedFiles
-    ) {
+            boolean insideDeletedDirectory,
+            List<FAT32DirectoryEntry> results,
+            Set<Long> visitedDirectoryClusters)
+            throws IOException {
 
         for (int offset = 0;
-             offset + DIRECTORY_ENTRY_SIZE <= sector.length;
-             offset += DIRECTORY_ENTRY_SIZE) {
+             offset + ENTRY_SIZE <= sector.length;
+             offset += ENTRY_SIZE) {
 
-            int firstByte =
-                    sector[offset] & 0xFF;
+            int first = sector[offset] & 0xFF;
 
-            /*
-             * 0x00 means no more directory entries.
-             */
-            if (firstByte == 0x00) {
-                break;
+            // No entries follow this marker in this directory.
+            if (first == 0x00) {
+                return true;
             }
 
-            /*
-             * Deleted FAT directory entry starts with E5.
-             */
-            if (firstByte != 0xE5) {
+            boolean deleted = first == 0xE5;
+            int attributes = sector[offset + 11] & 0xFF;
+
+            // Skip long-filename metadata and volume labels.
+            if (attributes == ATTR_LONG_NAME
+                    || (attributes & ATTR_VOLUME_LABEL) != 0) {
                 continue;
             }
 
-            int attributes =
-                    sector[offset + 11] & 0xFF;
+            boolean directory = (attributes & ATTR_DIRECTORY) != 0;
 
-            /*
-             * Skip Long File Name entries.
-             */
-            if (attributes == 0x0F) {
+            // Skip the special "." and ".." directory entries.
+            if (!deleted && sector[offset] == '.') {
                 continue;
             }
 
-            /*
-             * Skip volume labels.
-             */
-            if ((attributes & 0x08) != 0) {
-                continue;
-            }
+            long high = readUInt16LE(sector, offset + 20);
+            long low = readUInt16LE(sector, offset + 26);
+            long startCluster = (high << 16) | low;
+            long fileSize = readUInt32LE(sector, offset + 28);
 
-            String fileName =
-                    parseDeletedShortName(
-                            sector,
-                            offset
-                    );
-
-            int highCluster =
-                    readUInt16LE(
-                            sector,
-                            offset + 20
-                    );
-
-            int lowCluster =
-                    readUInt16LE(
-                            sector,
-                            offset + 26
-                    );
-
-            long startCluster =
-                    ((long) highCluster << 16)
-                            |
-                    (lowCluster & 0xFFFFL);
-
-            long fileSize =
-                    readUInt32LE(
-                            sector,
-                            offset + 28
-                    );
-
-            FAT32DirectoryEntry entry =
-                    new FAT32DirectoryEntry(
-                            fileName,
+            if (directory) {
+                /*
+                 * Enter deleted directories and their descendants.
+                 * Do not recursively scan ordinary root directories.
+                 */
+                if ((deleted || insideDeletedDirectory)
+                        && startCluster >= 2) {
+                    scanDirectory(
                             startCluster,
-                            fileSize,
                             true,
-                            attributes
-                    );
+                            results,
+                            visitedDirectoryClusters);
+                }
 
-            deletedFiles.add(
-                    entry
-            );
+                // Directories are not file recovery candidates.
+                continue;
+            }
+
+            /*
+             * Include files whose own entry is deleted, and files
+             * still marked allocated inside a deleted directory.
+             */
+            if (deleted || insideDeletedDirectory) {
+                String name = decodeShortName(
+                        sector, offset, deleted);
+
+                results.add(new FAT32DirectoryEntry(
+                        name,
+                        startCluster,
+                        fileSize,
+                        true,
+                        attributes));
+            }
         }
+
+        return false;
     }
 
-    private String parseDeletedShortName(
-            byte[] data,
-            int offset
-    ) {
+    private long readNextCluster(long cluster) throws IOException {
 
-        /*
-         * First character has been destroyed by FAT deletion,
-         * so represent it with '?'.
-         */
+        int bytesPerSector = bootSector.getBytesPerSector();
+        long fatOffset = cluster * 4L;
 
-        String base =
-                new String(
-                        data,
-                        offset + 1,
-                        7,
-                        StandardCharsets.US_ASCII
-                ).trim();
+        long fatSector = bootSector.getReservedSectorCount()
+                + fatOffset / bytesPerSector;
 
-        String extension =
-                new String(
-                        data,
-                        offset + 8,
-                        3,
-                        StandardCharsets.US_ASCII
-                ).trim();
+        int fatEntryOffset = (int) (fatOffset % bytesPerSector);
 
-        String name =
-                "?" + base;
+        byte[] fatData = reader.readSector(fatSector);
+
+        if (fatEntryOffset + 4 > fatData.length) {
+            throw new IOException("Invalid FAT entry offset");
+        }
+
+        long next = readUInt32LE(fatData, fatEntryOffset) & FAT_MASK;
+
+        if (next >= EOC_MIN || next == 0 || next == 1
+                || next == BAD_CLUSTER) {
+            return EOC_MIN;
+        }
+
+        if (next < 2) {
+            throw new IOException("Invalid FAT cluster chain: " + next);
+        }
+
+        return next;
+    }
+
+    private static String decodeShortName(
+            byte[] sector,
+            int offset,
+            boolean deleted) {
+
+        int baseLength = deleted ? 7 : 8;
+
+        String base = new String(
+                sector,
+                offset + (deleted ? 1 : 0),
+                baseLength,
+                StandardCharsets.US_ASCII).trim();
+
+        String extension = new String(
+                sector,
+                offset + 8,
+                3,
+                StandardCharsets.US_ASCII).trim();
+
+        String name = deleted ? "?" + base : base;
 
         if (!extension.isEmpty()) {
             name += "." + extension;
@@ -193,27 +237,15 @@ public class FAT32DeletedFileScanner {
         return name;
     }
 
-    private int readUInt16LE(
-            byte[] data,
-            int offset
-    ) {
-
+    private static int readUInt16LE(byte[] data, int offset) {
         return (data[offset] & 0xFF)
-                |
-                ((data[offset + 1] & 0xFF) << 8);
+                | ((data[offset + 1] & 0xFF) << 8);
     }
 
-    private long readUInt32LE(
-            byte[] data,
-            int offset
-    ) {
-
+    private static long readUInt32LE(byte[] data, int offset) {
         return ((long) data[offset] & 0xFF)
-                |
-                (((long) data[offset + 1] & 0xFF) << 8)
-                |
-                (((long) data[offset + 2] & 0xFF) << 16)
-                |
-                (((long) data[offset + 3] & 0xFF) << 24);
+                | (((long) data[offset + 1] & 0xFF) << 8)
+                | (((long) data[offset + 2] & 0xFF) << 16)
+                | (((long) data[offset + 3] & 0xFF) << 24);
     }
 }
