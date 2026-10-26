@@ -215,44 +215,20 @@ This section describes the expected end-to-end recovery session. The exact scree
 
 ### Workflow overview
 
-```text
-Connect USB
-    |
-    v
-Identify the correct physical drive
-    |
-    v
-Check device and partition information
-    |
-    v
-Unmount mounted partitions if required
-    |
-    v
-Launch URE
-    |
-    v
-Select the source drive
-    |
-    v
-Analyze device and detect filesystem
-    |
-    v
-Scan for recoverable files
-    |
-    v
-Review scan results and recovery status
-    |
-    v
-Select files to recover
-    |
-    v
-Choose a separate destination drive
-    |
-    v
-Recover files and validate the output
-    |
-    v
-Close URE and safely remove the USB
+```mermaid:
+flowchart TD
+    A["Connect USB"] --> B["Identify the correct physical drive"]
+    B --> C["Check device and partition information"]
+    C --> D["Unmount mounted partitions if required"]
+    D --> E["Launch URE"]
+    E --> F["Select the source drive"]
+    F --> G["Analyze device and detect filesystem"]
+    G --> H["Scan for recoverable files"]
+    H --> I["Review scan results and recovery status"]
+    I --> J["Select files to recover"]
+    J --> K["Choose a separate destination drive"]
+    K --> L["Recover files and validate the output"]
+    L --> M["Close URE and safely remove the USB"]
 ```
 
 ### Phase 1 — Prepare the source device
