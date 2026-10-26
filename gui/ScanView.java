@@ -630,64 +630,73 @@ public class ScanView extends VBox {
                             );
 
 
-                            for (
-                                    long sector = 0;
-                                    sector < totalSectors;
-                                    sector++
-                            ) {
+                            int sectorSize = sectorReader.getSectorSize();
+                            int sectorsPerBatch = Math.max(
+                                    1,
+                                    (1024 * 1024) / sectorSize
+                            );
 
-                                if (
-                                        cancelled
-                                                ||
-                                        isCancelled()
-                                ) {
+                            for (long batchStart = 0;
+                                 batchStart < totalSectors;) {
 
+                                if (cancelled || isCancelled()) {
                                     break;
                                 }
 
-
-                                boolean containsData =
-                                        scanner.hasData(
-                                                sector
-                                        );
-
-
-                                scannedSectors++;
-
-
-                                if (containsData) {
-
-                                    dataSectors++;
-
-                                } else {
-
-                                    emptySectors++;
-                                }
-
-
-                                updateProgress(
-                                        scannedSectors,
-                                        totalSectors
+                                int batchCount = (int) Math.min(
+                                        (long) sectorsPerBatch,
+                                        totalSectors - batchStart
                                 );
 
+                                byte[] batch = sectorReader.readSectors(
+                                        batchStart,
+                                        batchCount
+                                );
 
-                                if (
-                                        scannedSectors
-                                                % UI_UPDATE_INTERVAL
-                                                == 0
-                                                ||
-                                        scannedSectors
-                                                == totalSectors
-                                ) {
+                                for (int i = 0; i < batchCount; i++) {
+                                    if (cancelled || isCancelled()) {
+                                        break;
+                                    }
 
-                                    updateUi(
-                                            sector,
-                                            scannedSectors,
-                                            dataSectors,
-                                            emptySectors,
-                                            totalSectors
-                                    );
+                                    int offset = i * sectorSize;
+                                    boolean containsData = false;
+
+                                    for (int j = 0; j < sectorSize; j++) {
+                                        if (batch[offset + j] != 0) {
+                                            containsData = true;
+                                            break;
+                                        }
+                                    }
+
+                                    scannedSectors++;
+
+                                    if (containsData) {
+                                        dataSectors++;
+                                    } else {
+                                        emptySectors++;
+                                    }
+
+                                    long sector = batchStart + i;
+
+                                    if (scannedSectors % UI_UPDATE_INTERVAL == 0
+                                            || scannedSectors == totalSectors) {
+                                        updateUi(
+                                                sector,
+                                                scannedSectors,
+                                                dataSectors,
+                                                emptySectors,
+                                                totalSectors
+                                        );
+                                    }
                                 }
+
+                                updateProgress(scannedSectors, totalSectors);
+
+                                if (cancelled || isCancelled()) {
+                                    break;
+                                }
+
+                                batchStart += batchCount;
                             }
 
 

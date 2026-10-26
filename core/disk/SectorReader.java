@@ -5,8 +5,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Read-only sector access for disk images and device files.
@@ -23,6 +23,9 @@ public class SectorReader implements Closeable {
     private static final int DEFAULT_SECTOR_SIZE = 512;
 
     private final RandomAccessFile file;
+    private final NativeReadTransport nativeTransport;
+    private final long sourceCapacityBytes;
+    private static final int NATIVE_CHUNK_BYTES = 1024 * 1024;
     private final int sectorSize;
     private final long totalSectors;
     private final long baseOffsetBytes;
@@ -104,105 +107,103 @@ public class SectorReader implements Closeable {
             );
         }
 
-        RandomAccessFile opened = new RandomAccessFile(path, "r");
-
+        Path source = Path.of(path);
+        long capacity;
         long visibleBytes;
+        RandomAccessFile openedFile = null;
+        NativeReadTransport openedTransport = null;
 
-        try {
-            long imageLength = getDeviceCapacityBytes(path, opened);
-
-            if (baseOffsetBytes > imageLength) {
-                throw new IllegalArgumentException(
-                        "Base offset exceeds image size"
-                );
-            }
-
-            long remainingBytes = imageLength - baseOffsetBytes;
-
-            if (bounded) {
-                if (requestedLengthBytes > remainingBytes) {
-                    throw new IllegalArgumentException(
-                            "Bounded region extends beyond image size"
-                    );
-                }
-
-                visibleBytes = requestedLengthBytes;
-            } else {
-                visibleBytes = remainingBytes;
-            }
-
-        } catch (IOException | RuntimeException e) {
+        if (Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) {
+            openedFile = new RandomAccessFile(path, "r");
             try {
-                opened.close();
-            } catch (IOException closeError) {
-                e.addSuppressed(closeError);
+                capacity = openedFile.length();
+                if (capacity <= 0) {
+                    throw new IOException("Disk image is empty");
+                }
+                if (baseOffsetBytes > capacity) {
+                    throw new IllegalArgumentException(
+                            "Base offset exceeds image size");
+                }
+                long remaining = capacity - baseOffsetBytes;
+                if (bounded && requestedLengthBytes > remaining) {
+                    throw new IllegalArgumentException(
+                            "Bounded region extends beyond image size");
+                }
+                visibleBytes = bounded ? requestedLengthBytes : remaining;
+            } catch (IOException | RuntimeException e) {
+                try {
+                    openedFile.close();
+                } catch (IOException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                throw e;
             }
-            throw e;
+        } else {
+            if (!path.startsWith("/dev/")) {
+                throw new IOException(
+                        "Only regular disk images or eligible /dev devices are supported");
+            }
+            if (!PhysicalDriveDiscovery.isSelectableDevice(path)) {
+                throw new IOException(
+                        "Physical device is not eligible for scanning: " + path);
+            }
+
+            String helper = System.getProperty("ure.native.bridge");
+            if (helper == null || helper.isBlank()) {
+                helper = System.getenv("URE_NATIVE_BRIDGE");
+            }
+            if (helper == null || helper.isBlank()) {
+                Path builtHelper = Path.of("build/native/ure-udisks-readonly-bridge");
+                Path repoHelper = Path.of("native/ure-disk-helper/udisks_readonly_bridge");
+                if (Files.isExecutable(builtHelper)) {
+                    helper = builtHelper.toAbsolutePath().toString();
+                } else if (Files.isExecutable(repoHelper)) {
+                    helper = repoHelper.toAbsolutePath().toString();
+                } else {
+                    throw new IOException(
+                            "Native bridge not found. Build it or set "
+                            + "-Dure.native.bridge=/absolute/path");
+                }
+            }
+
+            openedTransport = new NativeReadTransport(
+                    new ProcessBuilder(helper, path));
+            try {
+                capacity = openedTransport.size();
+                if (baseOffsetBytes > capacity) {
+                    throw new IllegalArgumentException(
+                            "Base offset exceeds device size");
+                }
+                long remaining = capacity - baseOffsetBytes;
+                if (bounded && requestedLengthBytes > remaining) {
+                    throw new IllegalArgumentException(
+                            "Bounded region extends beyond device size");
+                }
+                visibleBytes = bounded ? requestedLengthBytes : remaining;
+            } catch (IOException | RuntimeException e) {
+                try {
+                    openedTransport.close();
+                } catch (IOException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                throw e;
+            }
         }
 
-        this.file = opened;
+        this.file = openedFile;
+        this.nativeTransport = openedTransport;
+        this.sourceCapacityBytes = capacity;
         this.sectorSize = sectorSize;
         this.baseOffsetBytes = baseOffsetBytes;
         this.totalBytes = visibleBytes;
         this.totalSectors = visibleBytes / sectorSize;
-    }
-
-    /**
-     * Returns the actual capacity for a block device, or the file length
-     * for a regular disk image. Device capacity lookup fails closed.
-     */
-    private static long getDeviceCapacityBytes(
-            String path,
-            RandomAccessFile opened
-    ) throws IOException {
-
-        if (Files.isRegularFile(Path.of(path))) {
-            return opened.length();
-        }
-
-        Process process = new ProcessBuilder(
-                "blockdev", "--getsize64", path
-        ).redirectErrorStream(true).start();
-
-        byte[] output = process.getInputStream().readAllBytes();
-
-        try {
-            if (!process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
-                process.destroyForcibly();
-                throw new IOException(
-                        "Timed out determining device capacity: " + path
-                );
+        if (this.totalSectors <= 0) {
+            try {
+                close();
+            } catch (IOException ignored) {
             }
-        } catch (InterruptedException e) {
-            process.destroyForcibly();
-            Thread.currentThread().interrupt();
             throw new IOException(
-                    "Interrupted while determining device capacity: " + path,
-                    e
-            );
-        }
-
-        String result = new String(output, StandardCharsets.UTF_8).trim();
-
-        if (process.exitValue() != 0) {
-            throw new IOException(
-                    "Could not determine device capacity for " + path
-                            + ": " + result
-            );
-        }
-
-        try {
-            long capacity = Long.parseLong(result);
-            if (capacity <= 0) {
-                throw new IOException("Device capacity is not positive: " + path);
-            }
-            return capacity;
-        } catch (NumberFormatException e) {
-            throw new IOException(
-                    "Invalid device capacity returned for " + path
-                            + ": " + result,
-                    e
-            );
+                    "Visible source region contains no complete sectors");
         }
     }
 
@@ -214,11 +215,7 @@ public class SectorReader implements Closeable {
 
         checkRange(sectorNumber, 1);
 
-        byte[] buffer = new byte[sectorSize];
-        file.seek(absolutePosition(sectorNumber));
-        file.readFully(buffer);
-
-        return buffer;
+        return readBytes(absolutePosition(sectorNumber), sectorSize);
     }
 
     /**
@@ -245,11 +242,31 @@ public class SectorReader implements Closeable {
             );
         }
 
-        byte[] buffer = new byte[(int) bytesToRead];
-        file.seek(absolutePosition(startSector));
-        file.readFully(buffer);
+        return readBytes(absolutePosition(startSector), (int) bytesToRead);
+    }
 
-        return buffer;
+    private byte[] readBytes(long absoluteOffset, int length)
+            throws IOException {
+        if (file != null) {
+            byte[] buffer = new byte[length];
+            file.seek(absoluteOffset);
+            file.readFully(buffer);
+            return buffer;
+        }
+
+        byte[] result = new byte[length];
+        int copied = 0;
+        while (copied < length) {
+            int chunk = Math.min(NATIVE_CHUNK_BYTES, length - copied);
+            byte[] part = nativeTransport.read(
+                    absoluteOffset + copied, chunk, sourceCapacityBytes);
+            if (part.length != chunk) {
+                throw new IOException("Native helper returned an unexpected byte count");
+            }
+            System.arraycopy(part, 0, result, copied, chunk);
+            copied += chunk;
+        }
+        return result;
     }
 
     private void checkRange(long startSector, int count) {
@@ -294,6 +311,10 @@ public class SectorReader implements Closeable {
 
     @Override
     public synchronized void close() throws IOException {
-        file.close();
+        if (nativeTransport != null) {
+            nativeTransport.close();
+        } else if (file != null) {
+            file.close();
+        }
     }
 }

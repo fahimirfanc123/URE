@@ -6,7 +6,10 @@ import filesystem.fat32.FAT32BootSector;
 import filesystem.fat32.FAT32DeletedFileScanner;
 import filesystem.fat32.FAT32DirectoryEntry;
 import filesystem.fat32.FAT32FileRecovery;
-
+import javafx.stage.DirectoryChooser;
+import java.nio.file.Files;
+import java.util.HashSet;
+import java.util.Set;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -33,10 +36,12 @@ public class FAT32RecoveryView extends VBox {
 
     private final long partitionOffsetBytes;
     private final long partitionLengthBytes;
-private final VBox filesContainer;
+    private final VBox filesContainer;
     private final Label statusLabel;
     private final Button exitButton;
     private final ProgressIndicator loadingIndicator;
+    private List<FAT32DirectoryEntry> scannedFiles = List.of();
+    private final Button recoverAllButton;
 
     public FAT32RecoveryView(
             Stage stage,
@@ -80,6 +85,11 @@ private final VBox filesContainer;
         exitButton.setVisible(false);
         exitButton.setManaged(false);
         exitButton.setOnAction(event -> stage.close());
+
+        recoverAllButton = new Button("RECOVER ALL");
+        recoverAllButton.getStyleClass().add("fat32-recover-button");
+        recoverAllButton.setDisable(true);
+        recoverAllButton.setOnAction(event -> chooseBatchOutput());
 
         setMinWidth(0);
         setMinHeight(0);
@@ -254,7 +264,7 @@ private final VBox filesContainer;
         );
 
 
-        HBox footer = new HBox(12, backButton, exitButton);
+        HBox footer = new HBox(12, backButton, recoverAllButton, exitButton);
         footer.setAlignment(Pos.CENTER_LEFT);
 
         getChildren().addAll(
@@ -333,7 +343,8 @@ private final VBox filesContainer;
 
                     List<FAT32DirectoryEntry> files =
                             task.getValue();
-
+                    scannedFiles = List.copyOf(files);
+                    recoverAllButton.setDisable(files.isEmpty());
 
                     if (files.isEmpty()) {
 
@@ -544,6 +555,142 @@ private final VBox filesContainer;
         return card;
     }
 
+
+    private void chooseBatchOutput() {
+        if (scannedFiles.isEmpty()) {
+            statusLabel.setText("NO FILES AVAILABLE TO RECOVER");
+            return;
+        }
+
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Choose Folder for Recovered Files");
+
+        File destination = chooser.showDialog(stage);
+        if (destination == null) {
+            return;
+        }
+
+        if (!destination.isDirectory() || !destination.canWrite()) {
+            statusLabel.setText("DESTINATION FOLDER IS NOT WRITABLE");
+            return;
+        }
+
+        recoverAllFiles(destination.toPath());
+    }
+
+    private void recoverAllFiles(Path destination) {
+        List<FAT32DirectoryEntry> filesToRecover = List.copyOf(scannedFiles);
+
+        recoverAllButton.setDisable(true);
+        loadingIndicator.setVisible(true);
+        loadingIndicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+
+        Task<String> task = new Task<>() {
+            @Override
+            protected String call() {
+                int recovered = 0;
+                int failed = 0;
+                Set<String> reservedNames = new HashSet<>();
+
+                for (int i = 0; i < filesToRecover.size(); i++) {
+                    FAT32DirectoryEntry entry = filesToRecover.get(i);
+                    updateMessage("RECOVERING " + (i + 1) + " OF "
+                            + filesToRecover.size() + ": " + entry.getFileName());
+                    updateProgress(i, filesToRecover.size());
+
+                    try {
+                        String safeName = entry.getFileName()
+                                .replace('?', '_')
+                                .replace('/', '_')
+                                .replace('\\', '_');
+
+                        if (safeName.isBlank() || safeName.equals(".")
+                                || safeName.equals("..")) {
+                            safeName = "recovered_file_" + (i + 1);
+                        }
+
+                        Path output = uniqueOutputPath(
+                                destination, safeName, reservedNames);
+
+                        try (SectorReader reader = openSourceReader()) {
+                            FAT32BootSector boot = FAT32BootSector.parse(reader);
+                            FAT32FileRecovery recovery =
+                                    new FAT32FileRecovery(reader, boot);
+                            byte[] data = recovery.recover(entry);
+                            RecoveryWriter writer = new RecoveryWriter();
+                            writer.write(data, output);
+                        }
+
+                        recovered++;
+                    } catch (Exception ex) {
+                        failed++;
+                        System.err.println("Failed to recover "
+                                + entry.getFileName() + ": " + ex.getMessage());
+                    }
+
+                    updateProgress(i + 1, filesToRecover.size());
+                }
+
+                return "BATCH COMPLETE — RECOVERED: " + recovered
+                        + " | FAILED: " + failed
+                        + " | TOTAL: " + filesToRecover.size();
+            }
+        };
+
+        task.messageProperty().addListener((observable, oldMessage, newMessage) ->
+                statusLabel.setText(newMessage));
+        loadingIndicator.progressProperty().bind(task.progressProperty());
+
+        task.setOnSucceeded(event -> {
+            loadingIndicator.progressProperty().unbind();
+            loadingIndicator.setVisible(false);
+            statusLabel.setText(task.getValue());
+            recoverAllButton.setDisable(false);
+            exitButton.setManaged(true);
+            exitButton.setVisible(true);
+        });
+
+        task.setOnFailed(event -> {
+            loadingIndicator.progressProperty().unbind();
+            loadingIndicator.setVisible(false);
+            statusLabel.setText("BATCH RECOVERY STOPPED: "
+                    + (task.getException() == null
+                    ? "UNKNOWN ERROR"
+                    : task.getException().getMessage()));
+            recoverAllButton.setDisable(false);
+        });
+
+        Thread thread = new Thread(task, "minion-ure-fat32-batch-recovery");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private Path uniqueOutputPath(
+            Path destination,
+            String fileName,
+            Set<String> reservedNames) {
+
+        String baseName = fileName;
+        String extension = "";
+        int dot = fileName.lastIndexOf('.');
+        if (dot > 0) {
+            baseName = fileName.substring(0, dot);
+            extension = fileName.substring(dot);
+        }
+
+        for (int suffix = 0; ; suffix++) {
+            String candidateName = suffix == 0
+                    ? baseName + extension
+                    : baseName + "_" + suffix + extension;
+            Path candidate = destination.resolve(candidateName)
+                    .toAbsolutePath().normalize();
+            String key = candidate.toString();
+
+            if (!Files.exists(candidate) && reservedNames.add(key)) {
+                return candidate;
+            }
+        }
+    }
 
     /*
      * =============================================================

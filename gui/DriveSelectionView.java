@@ -606,28 +606,24 @@ public class DriveSelectionView
                 new javafx.scene.layout.Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        String unavailableReason = getUnavailableReason(disk);
+        boolean selectable = disk.isRemovable()
+                && disk.isSelectable();
+
         Label status = new Label(
-                disk.isSelectable() ? "SELECT  ›" : getUnavailableReason(disk)
+                selectable ? "SELECT DRIVE"
+                        : (disk.isRemovable()
+                                ? unavailableReason
+                                : "NOT REMOVABLE")
         );
         status.getStyleClass().add("drive-select-label");
 
         card.getChildren().addAll(icon, information, spacer, status);
-
-        boolean selectable = disk.isSelectable();
         card.setDisable(!selectable);
 
         if (selectable) {
-            card.setOnMouseClicked(event -> {
-                if (disk.hasMountedFilesystem()) {
-                    showMountedDriveWarning(
-                            disk,
-                            () -> selectPhysicalDrive(disk, displayName)
-                    );
-                    return;
-                }
-
-                selectPhysicalDrive(disk, displayName);
-            });
+            card.setOnMouseClicked(event ->
+                    selectPhysicalDrive(disk, displayName));
         }
 
         return card;
@@ -637,14 +633,23 @@ public class DriveSelectionView
             PhysicalDriveDiscovery.PhysicalDrive disk,
             String displayName
     ) {
-        selectedSource = new File(disk.getPath());
+        if (disk == null
+                || !disk.isRemovable()
+                || !disk.isSelectable()) {
+            selectedSource = null;
+            scanButton.setDisable(true);
+            selectedName.setText("Drive unavailable");
+            selectedPath.setText(disk == null ? "" : disk.getPath());
+            return;
+        }
 
+        selectedSource = new File(disk.getPath());
+        scanButton.setDisable(false);
         selectedName.setText(displayName);
         selectedPath.setText(disk.getPath());
         selectedSize.setText(
                 "SIZE   " + formatBytes(disk.getSizeBytes())
         );
-        scanButton.setDisable(false);
     }
 
     private void showMountedDriveWarning(

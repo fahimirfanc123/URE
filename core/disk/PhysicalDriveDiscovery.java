@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Read-only Linux physical-disk inventory.
@@ -94,6 +96,7 @@ public final class PhysicalDriveDiscovery {
         public boolean isSelectable() {
             return sizeBytes > 0
                     && !containsRootFilesystem
+                    && !hasMountedFilesystem
                     && !readOnly;
         }
     }
@@ -103,57 +106,10 @@ public final class PhysicalDriveDiscovery {
      * Requires util-linux lsblk with JSON support.
      */
     public static List<PhysicalDrive> discover() throws IOException {
-        Process process = new ProcessBuilder(
-                "lsblk",
-                "--json",
-                "--bytes",
-                "--paths",
-                "--output",
-                "NAME,PATH,TYPE,SIZE,MODEL,TRAN,RM,RO,MOUNTPOINTS"
-        ).redirectErrorStream(true).start();
-
-        String output;
-
-        try {
-            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
-
-            if (!finished) {
-                process.destroyForcibly();
-                throw new IOException("Timed out while discovering physical drives.");
-            }
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(),
-                            StandardCharsets.UTF_8
-                    ))) {
-                StringBuilder text = new StringBuilder();
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    text.append(line).append('\n');
-                }
-
-                output = text.toString();
-            }
-
-            if (process.exitValue() != 0) {
-                throw new IOException("lsblk failed: " + output.trim());
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Drive discovery was interrupted.", e);
-        }
-
-        /*
-         * Use a second, simple lsblk invocation to obtain one physical
-         * disk per line. JSON is retained above for diagnostics and
-         * future partition-tree support.
-         */
-        return parseFlatInventory(output);
+        return parseFlatInventory();
     }
 
-    private static List<PhysicalDrive> parseFlatInventory(String json)
+    private static List<PhysicalDrive> parseFlatInventory()
             throws IOException {
         Process process = new ProcessBuilder(
                 "lsblk",
@@ -166,32 +122,24 @@ public final class PhysicalDriveDiscovery {
         ).redirectErrorStream(true).start();
 
         String output;
+        CompletableFuture<String> outputReader =
+                drainOutputAsync(process);
 
         try {
             if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
+                stopProcess(process, outputReader);
                 throw new IOException("Timed out while reading disk inventory.");
             }
 
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(),
-                            StandardCharsets.UTF_8
-                    ))) {
-                StringBuilder text = new StringBuilder();
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    text.append(line).append('\n');
-                }
-
-                output = text.toString();
-            }
+            output = awaitOutput(outputReader);
 
             if (process.exitValue() != 0) {
-                throw new IOException("Could not read disk inventory: " + output.trim());
+                throw new IOException(
+                        "Could not read disk inventory: " + output.trim()
+                );
             }
         } catch (InterruptedException e) {
+            stopProcess(process, outputReader);
             Thread.currentThread().interrupt();
             throw new IOException("Drive inventory was interrupted.", e);
         }
@@ -213,20 +161,41 @@ public final class PhysicalDriveDiscovery {
                 continue;
             }
 
+            String name = fields.get("NAME");
             String path = fields.get("PATH");
-            if (path == null || !path.startsWith("/dev/")) {
+
+            // Missing device identity is not safe to interpret.
+            if (name == null || name.isBlank()
+                    || path == null || !path.startsWith("/dev/")) {
                 continue;
             }
 
+            // Require a valid, positive capacity.
+            String sizeValue = fields.get("SIZE");
             long size;
             try {
-                size = Long.parseLong(fields.getOrDefault("SIZE", "0"));
+                if (sizeValue == null || sizeValue.isBlank()) {
+                    continue;
+                }
+                size = Long.parseLong(sizeValue);
+                if (size <= 0) {
+                    continue;
+                }
             } catch (NumberFormatException e) {
-                size = 0;
+                continue;
             }
 
-            boolean removable = "1".equals(fields.get("RM"));
-            boolean readOnly = "1".equals(fields.get("RO"));
+            // Do not treat missing or malformed flags as safe defaults.
+            String removableValue = fields.get("RM");
+            String readOnlyValue = fields.get("RO");
+
+            if (!("0".equals(removableValue) || "1".equals(removableValue))
+                    || !("0".equals(readOnlyValue) || "1".equals(readOnlyValue))) {
+                continue;
+            }
+
+            boolean removable = "1".equals(removableValue);
+            boolean readOnly = "1".equals(readOnlyValue);
 
             if (!isBlockDevice(path)) {
                 continue;
@@ -321,7 +290,9 @@ public final class PhysicalDriveDiscovery {
         try {
             Process process = new ProcessBuilder(
                     "test", "-b", path
-            ).start();
+            ).redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .redirectError(ProcessBuilder.Redirect.DISCARD)
+                    .start();
 
             if (!process.waitFor(2, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
@@ -334,6 +305,65 @@ public final class PhysicalDriveDiscovery {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
+        }
+    }
+
+
+    /**
+     * Drains merged subprocess output concurrently so a full pipe cannot
+     * prevent the child process from exiting.
+     */
+    private static CompletableFuture<String> drainOutputAsync(Process process) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(
+                            process.getInputStream(), StandardCharsets.UTF_8
+                    ))) {
+                StringBuilder text = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    text.append(line).append('\n');
+                }
+                return text.toString();
+            } catch (IOException e) {
+                throw new java.util.concurrent.CompletionException(e);
+            }
+        }, task -> Thread.ofVirtual().start(task));
+    }
+
+    /**
+     * Stops a subprocess and releases its output stream after timeout or
+     * interruption, preventing a reader task from lingering indefinitely.
+     */
+    private static void stopProcess(
+            Process process,
+            CompletableFuture<String> outputReader
+    ) {
+        process.destroyForcibly();
+
+        try {
+            process.getInputStream().close();
+        } catch (IOException ignored) {
+            // Best-effort cleanup after terminating the child.
+        }
+
+        outputReader.cancel(true);
+    }
+
+    private static String awaitOutput(CompletableFuture<String> outputReader)
+            throws IOException, InterruptedException {
+        try {
+            return outputReader.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof java.util.concurrent.CompletionException
+                    && cause.getCause() != null) {
+                cause = cause.getCause();
+            }
+            if (cause instanceof IOException ioException) {
+                throw ioException;
+            }
+            throw new IOException("Could not read subprocess output.", cause);
         }
     }
 
@@ -360,20 +390,15 @@ public final class PhysicalDriveDiscovery {
                 "findmnt", "-n", "-o", "SOURCE", "/"
         ).redirectErrorStream(true).start();
 
+        CompletableFuture<String> outputReader = drainOutputAsync(process);
         try {
             if (!process.waitFor(3, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
+                stopProcess(process, outputReader);
                 throw new IOException("Timed out while identifying the root filesystem.");
             }
 
-            String source;
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(),
-                            StandardCharsets.UTF_8
-                    ))) {
-                source = reader.readLine();
-            }
+            String output = awaitOutput(outputReader);
+            String source = output.lines().findFirst().orElse(null);
 
             if (process.exitValue() != 0 || source == null || source.isBlank()) {
                 throw new IOException("Cannot identify the root filesystem; refusing to enable physical scanning.");
@@ -381,6 +406,7 @@ public final class PhysicalDriveDiscovery {
 
             return source.trim();
         } catch (InterruptedException e) {
+            stopProcess(process, outputReader);
             Thread.currentThread().interrupt();
             throw new IOException("Root-filesystem check was interrupted.", e);
         }
@@ -400,23 +426,14 @@ public final class PhysicalDriveDiscovery {
         ).redirectErrorStream(true).start();
 
         String output;
+        CompletableFuture<String> outputReader = drainOutputAsync(process);
         try {
             if (!process.waitFor(3, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
+                stopProcess(process, outputReader);
                 throw new IOException("Timed out resolving system-disk ancestry.");
             }
 
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(), StandardCharsets.UTF_8
-                    ))) {
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line).append('\n');
-                }
-                output = result.toString();
-            }
+            output = awaitOutput(outputReader);
 
             if (process.exitValue() != 0 || output.isBlank()) {
                 throw new IOException(
@@ -424,6 +441,7 @@ public final class PhysicalDriveDiscovery {
                 );
             }
         } catch (InterruptedException e) {
+            stopProcess(process, outputReader);
             Thread.currentThread().interrupt();
             throw new IOException("System-disk ancestry check interrupted.", e);
         }
@@ -463,25 +481,16 @@ public final class PhysicalDriveDiscovery {
         ).redirectErrorStream(true).start();
 
         String output;
+        CompletableFuture<String> outputReader = drainOutputAsync(process);
         try {
             if (!process.waitFor(3, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
+                stopProcess(process, outputReader);
                 throw new IOException(
                         "Timed out checking mounted filesystems for " + diskPath
                 );
             }
 
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(
-                            process.getInputStream(), StandardCharsets.UTF_8
-                    ))) {
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line).append('\n');
-                }
-                output = result.toString();
-            }
+            output = awaitOutput(outputReader);
 
             if (process.exitValue() != 0) {
                 throw new IOException(
@@ -489,6 +498,7 @@ public final class PhysicalDriveDiscovery {
                 );
             }
         } catch (InterruptedException e) {
+            stopProcess(process, outputReader);
             Thread.currentThread().interrupt();
             throw new IOException("Mounted-filesystem check interrupted.", e);
         }
