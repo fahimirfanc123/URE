@@ -17,6 +17,16 @@ A Java-based data recovery application designed to scan storage devices, analyze
 - [Troubleshooting](#troubleshooting)
 - [Development Notes](#development-notes)
 
+## Screenshots
+
+### Home screen
+
+![MINION URE home screen](docs/screenshots/minion-ure-home.png)
+
+### Select a recovery source
+
+![Recovery source selection screen](docs/screenshots/recovery-source-selection.png)
+
 ## Features
 
 - JavaFX graphical interface.
@@ -529,3 +539,7 @@ When reporting bugs, include:
 5. Whether the issue occurs during startup, discovery, scanning, or recovery.
 
 Always reproduce bugs with test images or nonessential media whenever possible.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.

@@ -1,15 +1,21 @@
 package gui;
 
+import core.disk.PhysicalDriveDiscovery;
+
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.function.Consumer;
 
 public class DriveSelectionView
@@ -519,52 +525,290 @@ public class DriveSelectionView
      */
 
     private void loadDrives() {
+        driveContainer.getChildren().clear();
 
-        driveContainer
-                .getChildren()
-                .clear();
+        Label mountedHeading = new Label("MOUNTED VOLUMES");
+        mountedHeading.getStyleClass().add("drive-help-text");
+        driveContainer.getChildren().add(mountedHeading);
 
-        File[] roots =
-                File.listRoots();
+        File[] roots = File.listRoots();
+        if (roots != null) {
+            for (File root : roots) {
+                driveContainer.getChildren().add(createDriveCard(root));
+            }
+        }
 
-        if (
-                roots == null
-                        || roots.length == 0
-        ) {
+        Label physicalHeading = new Label("PHYSICAL DISKS");
+        physicalHeading.getStyleClass().add("drive-help-text");
+        driveContainer.getChildren().add(physicalHeading);
 
-            Label empty =
-                    new Label(
-                            "No mounted volumes detected."
+        try {
+            java.util.List<PhysicalDriveDiscovery.PhysicalDrive> disks =
+                    PhysicalDriveDiscovery.discover();
+
+            if (disks.isEmpty()) {
+                Label empty = new Label("No physical disks detected.");
+                empty.getStyleClass().add("drive-help-text");
+                driveContainer.getChildren().add(empty);
+            } else {
+                for (PhysicalDriveDiscovery.PhysicalDrive disk : disks) {
+                    driveContainer.getChildren().add(
+                            createPhysicalDriveCard(disk)
                     );
+                }
+            }
+        } catch (IOException ex) {
+            Label warning = new Label(
+                    "Physical disk discovery failed. Device selection is disabled."
+            );
+            warning.getStyleClass().add("drive-help-text");
+            warning.setWrapText(true);
+            driveContainer.getChildren().add(warning);
+        }
+    }
 
-            empty
-                    .getStyleClass()
-                    .add(
-                            "drive-help-text"
-                    );
+    private HBox createPhysicalDriveCard(
+            PhysicalDriveDiscovery.PhysicalDrive disk
+    ) {
+        HBox card = new HBox(15);
+        card.getStyleClass().add("drive-card");
+        card.setAlignment(Pos.CENTER_LEFT);
 
-            driveContainer
-                    .getChildren()
-                    .add(
-                            empty
-                    );
+        Label icon = new Label("▣");
+        icon.getStyleClass().add("drive-card-icon");
 
+        VBox information = new VBox(3);
+
+        String displayName = disk.getModel().isBlank()
+                ? disk.getName()
+                : disk.getModel();
+
+        Label name = new Label(displayName);
+        name.getStyleClass().add("drive-card-name");
+
+        Label path = new Label(disk.getPath());
+        path.getStyleClass().add("drive-card-path");
+
+        String transport = disk.getTransport().isBlank()
+                ? "unknown transport"
+                : disk.getTransport();
+
+        Label storage = new Label(
+                formatBytes(disk.getSizeBytes())
+                        + " total  •  " + transport
+                        + (disk.isRemovable() ? "  •  removable" : "")
+        );
+        storage.getStyleClass().add("drive-card-storage");
+
+        information.getChildren().addAll(name, path, storage);
+
+        javafx.scene.layout.Region spacer =
+                new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        String unavailableReason = getUnavailableReason(disk);
+        boolean selectable = disk.isRemovable()
+                && disk.isSelectable();
+
+        Label status = new Label(
+                selectable ? "SELECT DRIVE"
+                        : (disk.isRemovable()
+                                ? unavailableReason
+                                : "NOT REMOVABLE")
+        );
+        status.getStyleClass().add("drive-select-label");
+
+        card.getChildren().addAll(icon, information, spacer, status);
+        card.setDisable(!selectable);
+
+        if (selectable) {
+            card.setOnMouseClicked(event ->
+                    selectPhysicalDrive(disk, displayName));
+        }
+
+        return card;
+    }
+
+    private void selectPhysicalDrive(
+            PhysicalDriveDiscovery.PhysicalDrive disk,
+            String displayName
+    ) {
+        if (disk == null
+                || !disk.isRemovable()
+                || !disk.isSelectable()) {
+            selectedSource = null;
+            scanButton.setDisable(true);
+            selectedName.setText("Drive unavailable");
+            selectedPath.setText(disk == null ? "" : disk.getPath());
             return;
         }
 
-        for (
-                File root :
-                roots
-        ) {
+        selectedSource = new File(disk.getPath());
+        scanButton.setDisable(false);
+        selectedName.setText(displayName);
+        selectedPath.setText(disk.getPath());
+        selectedSize.setText(
+                "SIZE   " + formatBytes(disk.getSizeBytes())
+        );
+    }
 
-            driveContainer
-                    .getChildren()
-                    .add(
-                            createDriveCard(
-                                    root
-                            )
-                    );
+    private void showMountedDriveWarning(
+            PhysicalDriveDiscovery.PhysicalDrive disk,
+            Runnable onContinue
+    ) {
+        if (getScene() == null || getScene().getWindow() == null) {
+            return;
         }
+
+        javafx.geometry.Bounds bounds = localToScreen(getBoundsInLocal());
+        if (bounds == null || bounds.getWidth() <= 0 || bounds.getHeight() <= 0) {
+            return;
+        }
+
+        // Anchor the popup to this page, not Main's root.
+        // This keeps the title bar and footer outside the warning overlay.
+        Popup popup = new Popup();
+        popup.setAutoFix(false);
+        popup.setAutoHide(false);
+        popup.setHideOnEscape(false);
+
+        StackPane overlay = new StackPane();
+        overlay.getStyleClass().add("mounted-warning-overlay");
+        overlay.setPrefSize(bounds.getWidth(), bounds.getHeight());
+        overlay.setMinSize(bounds.getWidth(), bounds.getHeight());
+        overlay.setMaxSize(bounds.getWidth(), bounds.getHeight());
+        overlay.setFocusTraversable(true);
+
+        VBox dialog = new VBox(16);
+        dialog.getStyleClass().add("mounted-warning-card");
+        dialog.setMaxWidth(460);
+        dialog.setMaxHeight(Region.USE_PREF_SIZE);
+        StackPane.setAlignment(dialog, Pos.CENTER);
+
+        HBox heading = new HBox(12);
+        heading.setAlignment(Pos.CENTER_LEFT);
+
+        Label warningIcon = new Label("!");
+        warningIcon.getStyleClass().add("mounted-warning-icon");
+
+        VBox headingText = new VBox(4);
+
+        Label eyebrow = new Label("MINION URE  /  SAFETY CHECK");
+        eyebrow.getStyleClass().add("mounted-warning-eyebrow");
+
+        Label title = new Label("Mounted drive detected");
+        title.getStyleClass().add("mounted-warning-title");
+        title.setWrapText(true);
+
+        headingText.getChildren().addAll(eyebrow, title);
+        heading.getChildren().addAll(warningIcon, headingText);
+
+        Label drivePath = new Label(disk.getPath());
+        drivePath.getStyleClass().add("mounted-warning-path");
+        drivePath.setMaxWidth(Double.MAX_VALUE);
+        drivePath.setWrapText(true);
+
+        Label message = new Label(
+                "This drive has mounted filesystems. If its contents "
+                + "change during scanning, recovery results may be "
+                + "inconsistent. An unmounted source is recommended "
+                + "for the best results."
+        );
+        message.getStyleClass().add("mounted-warning-message");
+        message.setWrapText(true);
+
+        Label safetyNote = new Label(
+                "SOURCE PROTECTION\\n"
+                + "MINION will not automatically unmount this drive. "
+                + "Scanning uses read-only access, but the operating "
+                + "system may still change mounted data."
+        );
+        safetyNote.getStyleClass().add("mounted-warning-note");
+        safetyNote.setWrapText(true);
+
+        HBox actions = new HBox(10);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+
+        Button cancel = new Button("CANCEL");
+        cancel.getStyleClass().addAll(
+                "drive-secondary-button",
+                "mounted-warning-button"
+        );
+        cancel.setOnAction(event -> popup.hide());
+
+        Button proceed = new Button("CONTINUE  ›");
+        proceed.getStyleClass().addAll(
+                "start-button",
+                "mounted-warning-button"
+        );
+        proceed.setOnAction(event -> {
+            popup.hide();
+            onContinue.run();
+        });
+
+        actions.getChildren().addAll(cancel, proceed);
+        dialog.getChildren().addAll(
+                heading,
+                drivePath,
+                message,
+                safetyNote,
+                actions
+        );
+
+        overlay.getChildren().add(dialog);
+
+        // Consume clicks on the overlay background to block the page below.
+        overlay.addEventFilter(
+                javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+                event -> {
+                    if (event.getTarget() == overlay) {
+                        event.consume();
+                    }
+                }
+        );
+
+        overlay.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                popup.hide();
+                event.consume();
+            }
+        });
+
+        popup.getContent().add(overlay);
+        popup.show(
+                getScene().getWindow(),
+                bounds.getMinX(),
+                bounds.getMinY()
+        );
+
+        // Popup has its own Scene, so copy the page's stylesheets.
+        if (popup.getScene() != null) {
+            popup.getScene().getStylesheets().setAll(
+                    getScene().getStylesheets()
+            );
+        }
+
+        popup.setWidth(bounds.getWidth());
+        popup.setHeight(bounds.getHeight());
+        overlay.requestFocus();
+    }
+
+    private String getUnavailableReason(
+            PhysicalDriveDiscovery.PhysicalDrive disk
+    ) {
+        if (disk.containsRootFilesystem()) {
+            return "SYSTEM DISK";
+        }
+        if (disk.hasMountedFilesystem()) {
+            return "MOUNTED";
+        }
+        if (disk.isReadOnly()) {
+            return "READ-ONLY";
+        }
+        if (disk.getSizeBytes() <= 0) {
+            return "UNKNOWN SIZE";
+        }
+        return "UNAVAILABLE";
     }
 
     /*

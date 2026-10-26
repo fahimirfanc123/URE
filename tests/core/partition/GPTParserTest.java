@@ -5,7 +5,9 @@ import core.partition.GPTParser;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
+import java.util.zip.CRC32;
 
 public class GPTParserTest {
 
@@ -20,6 +22,7 @@ public class GPTParserTest {
 
         testValidGPT(testFile);
         testGPTHeader(testFile);
+        testCorruptedHeader();
 
         System.out.println();
         System.out.println("Passed: " + passed);
@@ -50,6 +53,9 @@ public class GPTParserTest {
         try (SectorReader reader = new SectorReader(file.getPath())) {
 
             GPTParser parser = new GPTParser(reader);
+
+            check(parser.validateIntegrity(),
+        "GPT header and partition-array CRCs are valid");
 
             GPTParser.GPTHeader header = parser.readHeader();
 
@@ -95,19 +101,38 @@ public class GPTParserTest {
         }
     }
 
+
+       private static void testCorruptedHeader() throws Exception {
+    File file = createGPTTestImage();
+
+    try {
+        // Corrupt a header byte without updating its CRC.
+        try (RandomAccessFile raf = new RandomAccessFile(file, "rw")) {
+            raf.seek(512 + 20);
+            raf.writeByte(0x01);
+        }
+
+        try (SectorReader reader = new SectorReader(file.getPath())) {
+            GPTParser parser = new GPTParser(reader);
+
+            check(
+                    !parser.validateIntegrity(),
+                    "Corrupted GPT header fails CRC validation"
+            );
+        }
+    } finally {
+        if (!file.delete()) {
+            System.err.println("Warning: could not delete " + file);
+        }
+    }
+}
     /**
      * Creates a small fake disk containing a GPT header
      * specifically for testing GPTParser.
      */
     private static File createGPTTestImage() throws Exception {
 
-        File directory = new File("test-images");
-
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
-        File file = new File(directory, "gpt-test.img");
+        File file = File.createTempFile("gpt-parser-test-", ".img");
 
         try (RandomAccessFile raf =
                      new RandomAccessFile(file, "rw")) {
@@ -157,6 +182,17 @@ public class GPTParserTest {
 
             // Size of each partition entry
             writeIntLE(header, 84, 128);
+
+            // The fixture's 128 entries are initially all zero.
+            byte[] emptyPartitionArray = new byte[128 * 128];
+            CRC32 arrayCrc = new CRC32();
+            arrayCrc.update(emptyPartitionArray);
+            writeIntLE(header, 88, arrayCrc.getValue());
+
+            // Header CRC is calculated with bytes 16-19 set to zero.
+            CRC32 headerCrc = new CRC32();
+            headerCrc.update(header, 0, 92);
+            writeIntLE(header, 16, headerCrc.getValue());
 
             raf.write(header);
         }

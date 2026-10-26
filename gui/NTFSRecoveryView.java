@@ -32,8 +32,11 @@ public class NTFSRecoveryView extends VBox {
     private final File source;
     private final Runnable onBack;
 
-    private final VBox filesContainer;
+    private final long partitionOffsetBytes;
+    private final long partitionLengthBytes;
+private final VBox filesContainer;
     private final Label statusLabel;
+    private final Button exitButton;
     private final ProgressIndicator loadingIndicator;
 
 
@@ -42,10 +45,43 @@ public class NTFSRecoveryView extends VBox {
             File source,
             Runnable onBack
     ) {
+        this(stage, source, onBack, 0L, 0L);
+    }
+
+    public NTFSRecoveryView(
+            Stage stage,
+            File source,
+            Runnable onBack,
+            long partitionOffsetBytes,
+            long partitionLengthBytes
+    ) {
+        if (stage == null || source == null) {
+            throw new IllegalArgumentException(
+                    "Stage and source cannot be null"
+            );
+        }
+        if (partitionOffsetBytes < 0 || partitionLengthBytes < 0) {
+            throw new IllegalArgumentException(
+                    "Partition offset and length cannot be negative"
+            );
+        }
+        if (partitionLengthBytes == 0 && partitionOffsetBytes != 0) {
+            throw new IllegalArgumentException(
+                    "A nonzero partition offset requires a positive length"
+            );
+        }
 
         this.stage = stage;
         this.source = source;
         this.onBack = onBack;
+        this.partitionOffsetBytes = partitionOffsetBytes;
+        this.partitionLengthBytes = partitionLengthBytes;
+
+        exitButton = new Button("EXIT");
+        exitButton.getStyleClass().add("ure-exit-button");
+        exitButton.setVisible(false);
+        exitButton.setManaged(false);
+        exitButton.setOnAction(event -> stage.close());
 
         setMinWidth(0);
         setMinHeight(0);
@@ -72,7 +108,7 @@ public class NTFSRecoveryView extends VBox {
 
         Label moduleLabel =
                 new Label(
-                        "MODULE 08 / NTFS RECOVERY"
+                        "NTFS RECOVERY"
                 );
 
         moduleLabel
@@ -194,10 +230,7 @@ public class NTFSRecoveryView extends VBox {
         );
 
 
-        HBox footer =
-                new HBox(
-                        backButton
-                );
+        HBox footer = new HBox(12, backButton, exitButton);
 
         footer.setAlignment(
                 Pos.CENTER_LEFT
@@ -279,6 +312,19 @@ public class NTFSRecoveryView extends VBox {
     }
 
 
+    private SectorReader openSourceReader()
+            throws java.io.IOException {
+        if (partitionLengthBytes > 0) {
+            return new SectorReader(
+                    source.getAbsolutePath(),
+                    512,
+                    partitionOffsetBytes,
+                    partitionLengthBytes
+            );
+        }
+        return new SectorReader(source.getAbsolutePath());
+    }
+
     private void startDeletedFileScan() {
 
         Task<List<NTFSFileEntry>> task =
@@ -288,10 +334,7 @@ public class NTFSRecoveryView extends VBox {
                     protected List<NTFSFileEntry> call()
                             throws Exception {
 
-                        try (SectorReader reader =
-                                     new SectorReader(
-                                             source.getAbsolutePath()
-                                     )) {
+                        try (SectorReader reader = openSourceReader()) {
 
                             NTFSBootSector boot =
                                     NTFSBootSector.parse(
@@ -582,10 +625,7 @@ public class NTFSRecoveryView extends VBox {
                     protected Path call()
                             throws Exception {
 
-                        try (SectorReader reader =
-                                     new SectorReader(
-                                             source.getAbsolutePath()
-                                     )) {
+                        try (SectorReader reader = openSourceReader()) {
 
                             NTFSBootSector boot =
                                     NTFSBootSector.parse(
@@ -662,6 +702,9 @@ public class NTFSRecoveryView extends VBox {
                             "RECOVERY COMPLETE • "
                                     + entry.getFileName()
                     );
+
+                    exitButton.setManaged(true);
+                    exitButton.setVisible(true);
                 }
         );
 

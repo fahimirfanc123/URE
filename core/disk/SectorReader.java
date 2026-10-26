@@ -1,144 +1,319 @@
+
 package core.disk;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 
 /**
- * SectorReader provides low-level access to disk sectors from raw disk images or physical drives.
- * Supports reading individual sectors at a fixed size (default 512 bytes for standard sectors).
+ * Read-only sector access for disk images and device files.
  *
- * This is the foundational I/O layer for URE, enabling all higher-level recovery operations
- * to read raw disk data in a structured manner.
+ * Supports:
+ * 1. Reading an entire image.
+ * 2. Reading from a byte offset to the end of an image.
+ * 3. Reading a bounded region, such as a partition.
+ *
+ * All sector numbers are relative to this reader's visible region.
  */
 public class SectorReader implements Closeable {
 
     private static final int DEFAULT_SECTOR_SIZE = 512;
 
     private final RandomAccessFile file;
+    private final NativeReadTransport nativeTransport;
+    private final long sourceCapacityBytes;
+    private static final int NATIVE_CHUNK_BYTES = 1024 * 1024;
     private final int sectorSize;
     private final long totalSectors;
+    private final long baseOffsetBytes;
+    private final long totalBytes;
 
-    /**
-     * Opens a disk image or device file for sector-level reading.
-     *
-     * @param path Path to the disk image or device file
-     * @throws IOException If the file cannot be opened
-     */
     public SectorReader(String path) throws IOException {
-        this(path, DEFAULT_SECTOR_SIZE);
+        this(path, DEFAULT_SECTOR_SIZE, 0L);
     }
 
-    /**
-     * Opens a disk image or device file with a custom sector size.
-     * Useful for Advanced Format (4K) drives or other non-standard sector sizes.
-     *
-     * @param path Path to the disk image or device file
-     * @param sectorSize Sector size in bytes (typically 512 or 4096)
-     * @throws IOException If the file cannot be opened
-     * @throws IllegalArgumentException If sector size is invalid
-     */
     public SectorReader(String path, int sectorSize) throws IOException {
+        this(path, sectorSize, 0L);
+    }
+
+    /**
+     * Opens a read-only view starting at a byte offset and extending
+     * to the end of the image.
+     */
+    public SectorReader(
+            String path,
+            int sectorSize,
+            long baseOffsetBytes
+    ) throws IOException {
+        this(path, sectorSize, baseOffsetBytes, 0L, false);
+    }
+
+    /**
+     * Opens a read-only, partition-bounded view.
+     *
+     * @param path image or device path
+     * @param sectorSize sector size in bytes
+     * @param baseOffsetBytes starting byte offset
+     * @param lengthBytes length of the visible region in bytes
+     */
+    public SectorReader(
+            String path,
+            int sectorSize,
+            long baseOffsetBytes,
+            long lengthBytes
+    ) throws IOException {
+        this(path, sectorSize, baseOffsetBytes, lengthBytes, true);
+    }
+
+    private SectorReader(
+            String path,
+            int sectorSize,
+            long baseOffsetBytes,
+            long requestedLengthBytes,
+            boolean bounded
+    ) throws IOException {
+
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Path cannot be empty"
+            );
+        }
+
         if (sectorSize <= 0) {
-            throw new IllegalArgumentException("Sector size must be positive");
+            throw new IllegalArgumentException(
+                    "Sector size must be positive"
+            );
         }
+
+        if (baseOffsetBytes < 0) {
+            throw new IllegalArgumentException(
+                    "Base offset cannot be negative"
+            );
+        }
+
+        if (bounded && requestedLengthBytes <= 0) {
+            throw new IllegalArgumentException(
+                    "Bounded region length must be positive"
+            );
+        }
+
+        if (bounded && requestedLengthBytes % sectorSize != 0) {
+            throw new IllegalArgumentException(
+                    "Bounded region length must be a multiple "
+                            + "of the sector size"
+            );
+        }
+
+        Path source = Path.of(path);
+        long capacity;
+        long visibleBytes;
+        RandomAccessFile openedFile = null;
+        NativeReadTransport openedTransport = null;
+
+        if (Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) {
+            openedFile = new RandomAccessFile(path, "r");
+            try {
+                capacity = openedFile.length();
+                if (capacity <= 0) {
+                    throw new IOException("Disk image is empty");
+                }
+                if (baseOffsetBytes > capacity) {
+                    throw new IllegalArgumentException(
+                            "Base offset exceeds image size");
+                }
+                long remaining = capacity - baseOffsetBytes;
+                if (bounded && requestedLengthBytes > remaining) {
+                    throw new IllegalArgumentException(
+                            "Bounded region extends beyond image size");
+                }
+                visibleBytes = bounded ? requestedLengthBytes : remaining;
+            } catch (IOException | RuntimeException e) {
+                try {
+                    openedFile.close();
+                } catch (IOException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                throw e;
+            }
+        } else {
+            if (!path.startsWith("/dev/")) {
+                throw new IOException(
+                        "Only regular disk images or eligible /dev devices are supported");
+            }
+            if (!PhysicalDriveDiscovery.isSelectableDevice(path)) {
+                throw new IOException(
+                        "Physical device is not eligible for scanning: " + path);
+            }
+
+            String helper = System.getProperty("ure.native.bridge");
+            if (helper == null || helper.isBlank()) {
+                helper = System.getenv("URE_NATIVE_BRIDGE");
+            }
+            if (helper == null || helper.isBlank()) {
+                Path builtHelper = Path.of("build/native/ure-udisks-readonly-bridge");
+                Path repoHelper = Path.of("native/ure-disk-helper/udisks_readonly_bridge");
+                if (Files.isExecutable(builtHelper)) {
+                    helper = builtHelper.toAbsolutePath().toString();
+                } else if (Files.isExecutable(repoHelper)) {
+                    helper = repoHelper.toAbsolutePath().toString();
+                } else {
+                    throw new IOException(
+                            "Native bridge not found. Build it or set "
+                            + "-Dure.native.bridge=/absolute/path");
+                }
+            }
+
+            openedTransport = new NativeReadTransport(
+                    new ProcessBuilder(helper, path));
+            try {
+                capacity = openedTransport.size();
+                if (baseOffsetBytes > capacity) {
+                    throw new IllegalArgumentException(
+                            "Base offset exceeds device size");
+                }
+                long remaining = capacity - baseOffsetBytes;
+                if (bounded && requestedLengthBytes > remaining) {
+                    throw new IllegalArgumentException(
+                            "Bounded region extends beyond device size");
+                }
+                visibleBytes = bounded ? requestedLengthBytes : remaining;
+            } catch (IOException | RuntimeException e) {
+                try {
+                    openedTransport.close();
+                } catch (IOException closeError) {
+                    e.addSuppressed(closeError);
+                }
+                throw e;
+            }
+        }
+
+        this.file = openedFile;
+        this.nativeTransport = openedTransport;
+        this.sourceCapacityBytes = capacity;
         this.sectorSize = sectorSize;
-        this.file = new RandomAccessFile(path, "r");
-        this.totalSectors = file.length() / sectorSize;
-    }
-
-    /**
-     * Reads a single sector from the disk image.
-     *
-     * @param sectorNumber The sector index to read (0-based)
-     * @return A byte array containing the sector data (size = sectorSize)
-     * @throws IOException If a read error occurs
-     * @throws IllegalArgumentException If sector number is out of bounds
-     */
-    public byte[] readSector(long sectorNumber) throws IOException {
-        if (sectorNumber < 0 || sectorNumber >= totalSectors) {
-            throw new IllegalArgumentException(
-                String.format("Sector %d out of bounds (0-%d)", sectorNumber, totalSectors - 1)
-            );
+        this.baseOffsetBytes = baseOffsetBytes;
+        this.totalBytes = visibleBytes;
+        this.totalSectors = visibleBytes / sectorSize;
+        if (this.totalSectors <= 0) {
+            try {
+                close();
+            } catch (IOException ignored) {
+            }
+            throw new IOException(
+                    "Visible source region contains no complete sectors");
         }
-
-        long position = sectorNumber * (long) sectorSize;
-        file.seek(position);
-
-        byte[] buffer = new byte[sectorSize];
-        file.readFully(buffer);
-
-        return buffer;
     }
 
     /**
-     * Reads multiple consecutive sectors into a single buffer.
-     * More efficient than calling readSector() in a loop for large reads.
-     *
-     * @param startSector The starting sector number (0-based)
-     * @param count The number of consecutive sectors to read
-     * @return A byte array containing all requested sector data
-     * @throws IOException If a read error occurs
-     * @throws IllegalArgumentException If the range is invalid
+     * Reads one sector relative to this reader's visible region.
      */
-    public byte[] readSectors(long startSector, int count) throws IOException {
+    public synchronized byte[] readSector(long sectorNumber)
+            throws IOException {
+
+        checkRange(sectorNumber, 1);
+
+        return readBytes(absolutePosition(sectorNumber), sectorSize);
+    }
+
+    /**
+     * Reads consecutive sectors relative to this reader's visible region.
+     */
+    public synchronized byte[] readSectors(
+            long startSector,
+            int count
+    ) throws IOException {
+
         if (count <= 0) {
-            throw new IllegalArgumentException("Count must be positive");
-        }
-        if (startSector < 0 || (startSector + count) > totalSectors) {
             throw new IllegalArgumentException(
-                String.format("Sector range %d-%d out of bounds (0-%d)",
-                    startSector, startSector + count - 1, totalSectors - 1)
+                    "Count must be positive"
             );
         }
 
-        long position = startSector * (long) sectorSize;
-        file.seek(position);
+        checkRange(startSector, count);
 
-        byte[] buffer = new byte[sectorSize * count];
-        file.readFully(buffer);
+        long bytesToRead = (long) sectorSize * count;
 
-        return buffer;
+        if (bytesToRead > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "Requested read is too large"
+            );
+        }
+
+        return readBytes(absolutePosition(startSector), (int) bytesToRead);
     }
 
-    /**
-     * Gets the total number of sectors in the disk image.
-     * Calculated as: file_size / sector_size
-     *
-     * @return Total sector count
-     */
+    private byte[] readBytes(long absoluteOffset, int length)
+            throws IOException {
+        if (file != null) {
+            byte[] buffer = new byte[length];
+            file.seek(absoluteOffset);
+            file.readFully(buffer);
+            return buffer;
+        }
+
+        byte[] result = new byte[length];
+        int copied = 0;
+        while (copied < length) {
+            int chunk = Math.min(NATIVE_CHUNK_BYTES, length - copied);
+            byte[] part = nativeTransport.read(
+                    absoluteOffset + copied, chunk, sourceCapacityBytes);
+            if (part.length != chunk) {
+                throw new IOException("Native helper returned an unexpected byte count");
+            }
+            System.arraycopy(part, 0, result, copied, chunk);
+            copied += chunk;
+        }
+        return result;
+    }
+
+    private void checkRange(long startSector, int count) {
+        if (startSector < 0
+                || startSector >= totalSectors
+                || count > totalSectors - startSector) {
+
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Sector range %d-%d out of bounds "
+                                    + "(valid sectors: 0-%d)",
+                            startSector,
+                            startSector + (long) count - 1,
+                            totalSectors - 1
+                    )
+            );
+        }
+    }
+
+    private long absolutePosition(long sectorNumber) {
+        return baseOffsetBytes + sectorNumber * (long) sectorSize;
+    }
+
     public long getTotalSectors() {
         return totalSectors;
     }
 
-    /**
-     * Gets the sector size in bytes (typically 512 or 4096).
-     *
-     * @return Sector size
-     */
     public int getSectorSize() {
         return sectorSize;
     }
 
     /**
-     * Gets the total file size in bytes.
-     *
-     * @return File size
-     * @throws IOException If file size cannot be determined
+     * Returns the visible region's byte length.
      */
-    public long getTotalBytes() throws IOException {
-        return file.length();
+    public long getTotalBytes() {
+        return totalBytes;
     }
 
-    /**
-     * Closes the underlying file handle. Should be called when done reading.
-     * Automatically called if used with try-with-resources.
-     *
-     * @throws IOException If close fails
-     */
+    public long getBaseOffsetBytes() {
+        return baseOffsetBytes;
+    }
+
     @Override
-    public void close() throws IOException {
-        if (file != null) {
+    public synchronized void close() throws IOException {
+        if (nativeTransport != null) {
+            nativeTransport.close();
+        } else if (file != null) {
             file.close();
         }
     }

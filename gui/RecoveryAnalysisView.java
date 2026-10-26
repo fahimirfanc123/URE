@@ -97,7 +97,7 @@ public class RecoveryAnalysisView extends VBox {
 
         Label moduleLabel =
                 new Label(
-                        "MODULE 05  /  RECOVERY ENGINE"
+                        "RECOVERY ENGINE"
                 );
 
         moduleLabel

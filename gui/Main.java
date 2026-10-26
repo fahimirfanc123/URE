@@ -1,3 +1,4 @@
+
 package gui;
 
 import javafx.application.Application;
@@ -25,20 +26,8 @@ import java.io.File;
 
 public class Main extends Application {
 
-    /*
-     * =========================================================
-     * WINDOW DRAGGING
-     * =========================================================
-     */
-
     private double dragOffsetX;
     private double dragOffsetY;
-
-    /*
-     * =========================================================
-     * MANUAL MAXIMIZE STATE
-     * =========================================================
-     */
 
     private boolean maximized = false;
 
@@ -47,251 +36,90 @@ public class Main extends Application {
     private double restoreWidth;
     private double restoreHeight;
 
-    /*
-     * =========================================================
-     * MAIN UI
-     * =========================================================
-     */
-
     private BorderPane layout;
     private VBox homePage;
 
     private Button maximizeButton;
 
-    /*
-     * MODULE 3:
-     * Reference to the main application stage.
-     */
     private Stage stageReference;
 
     @Override
     public void start(Stage stage) {
 
-        /*
-         * MODULE 3:
-         * Save the application stage for GUI navigation.
-         */
         stageReference = stage;
 
-        /*
-         * Undecorated window because MINION
-         * has its own title bar.
-         */
         stage.initStyle(StageStyle.UNDECORATED);
-
         stage.setTitle("MINION URE");
 
-        /*
-         * Root stack:
-         *
-         * layer 1 = application
-         * layer 2 = magnetic cursor
-         */
         StackPane root = new StackPane();
 
         layout = new BorderPane();
 
-        layout
-                .getStyleClass()
-                .add("layout");
+        layout.getStyleClass().add("layout");
 
-        /*
-         * Create application sections.
-         */
-        HBox topBar =
-                createTopBar(stage);
+        HBox topBar = createTopBar(stage);
 
-        homePage =
-                createHomePage(stage);
+        // Constant title bar height across all window sizes.
+        topBar.setMinHeight(54);
+        topBar.setPrefHeight(54);
+        topBar.setMaxHeight(54);
 
-        HBox bottomBar =
-                createBottomBar();
+        homePage = createHomePage(stage);
+
+        HBox bottomBar = createBottomBar();
 
         layout.setTop(topBar);
-
         layout.setCenter(homePage);
-
         layout.setBottom(bottomBar);
 
         root.getChildren().add(layout);
 
-        /*
-         * =====================================================
-         * SCENE
-         * =====================================================
-         */
+        Scene scene = new Scene(root, 1100, 700);
 
-        Scene scene =
-                new Scene(
-                        root,
-                        1100,
-                        700
-                );
-
-        scene.heightProperty().addListener(
-                (observable, oldHeight, newHeight) -> {
-                    boolean compact = newHeight.doubleValue() < 680;
-
-                    double topHeight = compact ? 46 : 54;
-                    double footerHeight = compact ? 32 : 38;
-
-                    topBar.setMinHeight(topHeight);
-                    topBar.setPrefHeight(topHeight);
-                    topBar.setMaxHeight(topHeight);
-                    topBar.setStyle(
-                            compact
-                                    ? "-fx-padding: 4 10 4 16;"
-                                    : "-fx-padding: 6 10 6 16;"
-                    );
-
-                    bottomBar.setMinHeight(footerHeight);
-                    bottomBar.setPrefHeight(footerHeight);
-                    bottomBar.setMaxHeight(footerHeight);
-                    bottomBar.setStyle(
-                            compact
-                                    ? "-fx-padding: 0 10 0 10;"
-                                    : "-fx-padding: 0 16 0 16;"
-                    );
-                }
-        );
-
-        // Apply the correct dimensions immediately as well.
-        boolean compactWindow = scene.getHeight() < 680;
-        double initialTopHeight = compactWindow ? 46 : 54;
-        double initialFooterHeight = compactWindow ? 32 : 38;
-
-        topBar.setMinHeight(initialTopHeight);
-        topBar.setPrefHeight(initialTopHeight);
-        topBar.setMaxHeight(initialTopHeight);
-
-        bottomBar.setMinHeight(initialFooterHeight);
-        bottomBar.setPrefHeight(initialFooterHeight);
-        bottomBar.setMaxHeight(initialFooterHeight);
-
-        scene.setFill(
-                Color.TRANSPARENT
-        );
+        scene.setFill(Color.TRANSPARENT);
 
         scene.getStylesheets().add(
-
                 getClass()
-                        .getResource(
-                                "/css/main.css"
-                        )
+                        .getResource("/css/main.css")
                         .toExternalForm()
         );
 
-        /*
-         * Magnetic cursor.
-         */
-        createMagneticCursor(
-                scene,
-                root
-        );
+        createMagneticCursor(scene, root);
 
         stage.setScene(scene);
 
-        /*
-         * Minimum window size.
-         */
         stage.setMinWidth(850);
-
         stage.setMinHeight(600);
 
         stage.show();
         stage.centerOnScreen();
     }
 
-    /*
-     * =========================================================
-     * TOP BAR
-     * =========================================================
-     */
+    private HBox createTopBar(Stage stage) {
 
-    private HBox createTopBar(
-            Stage stage
-    ) {
+        HBox topBar = new HBox(12);
 
-        HBox topBar =
-        new HBox(12);
+        topBar.getStyleClass().add("top-bar");
+        topBar.setAlignment(Pos.CENTER_LEFT);
+        topBar.setMinWidth(0);
+        topBar.setMaxWidth(Double.MAX_VALUE);
 
-topBar
-        .getStyleClass()
-        .add("top-bar");
+        HBox brandArea = new HBox(9);
+        brandArea.setAlignment(Pos.CENTER_LEFT);
 
-topBar.setAlignment(
-        Pos.CENTER_LEFT
-);
+        Label miniLogo = new Label("M");
+        miniLogo.getStyleClass().add("mini-logo");
 
-/* Height is adapted to the available window size. */
+        VBox brandText = new VBox(-2);
 
-topBar.setMinWidth(0);
-topBar.setMaxWidth(Double.MAX_VALUE);
+        Label brand = new Label("MINION URE");
+        brand.getStyleClass().add("brand");
 
-        
+        Label brandSubtitle = new Label("UNIVERSAL RECOVERY ENGINE");
+        brandSubtitle.getStyleClass().add("brand-subtitle");
 
-        /*
-         * =====================================================
-         * BRAND
-         * =====================================================
-         */
-
-        HBox brandArea =
-                new HBox(9);
-
-        brandArea.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        Label miniLogo =
-                new Label("M");
-
-        miniLogo
-                .getStyleClass()
-                .add("mini-logo");
-
-        VBox brandText =
-                new VBox(-2);
-
-        Label brand =
-                new Label(
-                        "MINION URE"
-                );
-
-        brand
-                .getStyleClass()
-                .add("brand");
-
-        Label brandSubtitle =
-                new Label(
-                        "UNIVERSAL RECOVERY ENGINE"
-                );
-
-        brandSubtitle
-                .getStyleClass()
-                .add(
-                        "brand-subtitle"
-                );
-
-        brandText
-                .getChildren()
-                .addAll(
-                        brand,
-                        brandSubtitle
-                );
-
-        brandArea
-                .getChildren()
-                .addAll(
-                        miniLogo,
-                        brandText
-                );
-
-        /*
-         * =====================================================
-         * SPACERS
-         * =====================================================
-         */
+        brandText.getChildren().addAll(brand, brandSubtitle);
+        brandArea.getChildren().addAll(miniLogo, brandText);
 
         javafx.scene.layout.Region leftSpacer =
                 new javafx.scene.layout.Region();
@@ -299,501 +127,200 @@ topBar.setMaxWidth(Double.MAX_VALUE);
         javafx.scene.layout.Region rightSpacer =
                 new javafx.scene.layout.Region();
 
-        HBox.setHgrow(
-                leftSpacer,
-                Priority.ALWAYS
+        HBox.setHgrow(leftSpacer, Priority.ALWAYS);
+        HBox.setHgrow(rightSpacer, Priority.ALWAYS);
+
+        HBox navigation = new HBox(7);
+        navigation.setAlignment(Pos.CENTER);
+
+        Label navLabel = new Label("RECOVERY");
+        navLabel.getStyleClass().add("nav-label");
+
+        Label navArrow = new Label("›");
+        navArrow.getStyleClass().add("nav-arrow");
+
+        navigation.getChildren().addAll(navLabel, navArrow);
+
+        HBox windowControls = new HBox(3);
+        windowControls.setAlignment(Pos.CENTER_RIGHT);
+
+        Button minimizeButton = new Button("—");
+        maximizeButton = new Button("□");
+        Button closeButton = new Button("×");
+
+        minimizeButton.getStyleClass().addAll(
+                "window-button",
+                "minimize-button"
         );
 
-        HBox.setHgrow(
-                rightSpacer,
-                Priority.ALWAYS
+        maximizeButton.getStyleClass().addAll(
+                "window-button",
+                "maximize-button"
         );
 
-        /*
-         * =====================================================
-         * NAVIGATION
-         * =====================================================
-         */
-
-        HBox navigation =
-                new HBox(7);
-
-        navigation.setAlignment(
-                Pos.CENTER
+        closeButton.getStyleClass().addAll(
+                "window-button",
+                "close-button"
         );
 
-        Label navLabel =
-                new Label(
-                        "RECOVERY"
-                );
+        configureWindowButton(minimizeButton);
+        configureWindowButton(maximizeButton);
+        configureWindowButton(closeButton);
 
-        navLabel
-                .getStyleClass()
-                .add(
-                        "nav-label"
-                );
+        minimizeButton.setOnAction(event -> {
+            event.consume();
+            stage.setIconified(true);
+        });
 
-        Label navArrow =
-                new Label("›");
+        maximizeButton.setOnAction(event -> {
+            event.consume();
+            toggleManualMaximize(stage);
+        });
 
-        navArrow
-                .getStyleClass()
-                .add(
-                        "nav-arrow"
-                );
+        closeButton.setOnAction(event -> {
+            event.consume();
+            stage.close();
+        });
 
-        navigation
-                .getChildren()
-                .addAll(
-                        navLabel,
-                        navArrow
-                );
-
-        /*
-         * =====================================================
-         * WINDOW CONTROLS
-         * =====================================================
-         */
-
-        HBox windowControls =
-                new HBox(3);
-
-        windowControls.setAlignment(
-                Pos.CENTER_RIGHT
-        );
-
-        Button minimizeButton =
-                new Button("—");
-
-        maximizeButton =
-                new Button("□");
-
-        Button closeButton =
-                new Button("×");
-
-        /*
-         * CSS classes.
-         */
-        minimizeButton
-                .getStyleClass()
-                .addAll(
-                        "window-button",
-                        "minimize-button"
-                );
-
-        maximizeButton
-                .getStyleClass()
-                .addAll(
-                        "window-button",
-                        "maximize-button"
-                );
-
-        closeButton
-                .getStyleClass()
-                .addAll(
-                        "window-button",
-                        "close-button"
-                );
-
-        /*
-         * Large hitboxes.
-         */
-        configureWindowButton(
-                minimizeButton
-        );
-
-        configureWindowButton(
-                maximizeButton
-        );
-
-        configureWindowButton(
+        windowControls.getChildren().addAll(
+                minimizeButton,
+                maximizeButton,
                 closeButton
         );
 
-        /*
-         * =====================================================
-         * MINIMIZE
-         * =====================================================
-         */
-
-        minimizeButton.setOnAction(
-                event -> {
-
-                    event.consume();
-
-                    stage.setIconified(true);
-                }
+        topBar.getChildren().addAll(
+                brandArea,
+                leftSpacer,
+                navigation,
+                rightSpacer,
+                windowControls
         );
 
-        /*
-         * =====================================================
-         * MAXIMIZE
-         * =====================================================
-         */
+        topBar.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
 
-        maximizeButton.setOnAction(
-                event -> {
+            if (isWindowControl(event)) {
+                return;
+            }
 
-                    event.consume();
+            dragOffsetX = event.getScreenX() - stage.getX();
+            dragOffsetY = event.getScreenY() - stage.getY();
+        });
 
-                    toggleManualMaximize(stage);
-                }
-        );
+        topBar.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
 
-        /*
-         * =====================================================
-         * CLOSE
-         * =====================================================
-         */
+            if (isWindowControl(event)) {
+                return;
+            }
 
-        closeButton.setOnAction(
-                event -> {
+            if (maximized) {
 
-                    event.consume();
+                double mouseRatio =
+                        event.getSceneX() / stage.getWidth();
 
-                    stage.close();
-                }
-        );
+                restoreWindow(stage);
 
-        windowControls
-                .getChildren()
-                .addAll(
-                        minimizeButton,
-                        maximizeButton,
-                        closeButton
-                );
+                dragOffsetX = stage.getWidth() * mouseRatio;
+                dragOffsetY = 18;
+            }
 
-        /*
-         * Add everything.
-         */
-        topBar
-                .getChildren()
-                .addAll(
-                        brandArea,
-                        leftSpacer,
-                        navigation,
-                        rightSpacer,
-                        windowControls
-                );
+            stage.setX(event.getScreenX() - dragOffsetX);
+            stage.setY(event.getScreenY() - dragOffsetY);
+        });
 
-        /*
-         * =====================================================
-         * WINDOW DRAGGING
-         * =====================================================
-         */
+        topBar.setOnMouseClicked(event -> {
 
-        topBar.addEventFilter(
-                MouseEvent.MOUSE_PRESSED,
-                event -> {
+            if (event.getClickCount() == 2
+                    && !isWindowControl(event)) {
 
-                    if (
-                            isWindowControl(event)
-                    ) {
-
-                        return;
-                    }
-
-                    dragOffsetX =
-                            event.getScreenX()
-                                    - stage.getX();
-
-                    dragOffsetY =
-                            event.getScreenY()
-                                    - stage.getY();
-                }
-        );
-
-        topBar.addEventFilter(
-                MouseEvent.MOUSE_DRAGGED,
-                event -> {
-
-                    if (
-                            isWindowControl(event)
-                    ) {
-
-                        return;
-                    }
-
-                    /*
-                     * Dragging a maximized window
-                     * automatically restores it.
-                     */
-                    if (maximized) {
-
-                        double mouseRatio =
-                                event.getSceneX()
-                                        /
-                                        stage.getWidth();
-
-                        restoreWindow(stage);
-
-                        dragOffsetX =
-                                stage.getWidth()
-                                        *
-                                        mouseRatio;
-
-                        dragOffsetY = 18;
-                    }
-
-                    stage.setX(
-                            event.getScreenX()
-                                    - dragOffsetX
-                    );
-
-                    stage.setY(
-                            event.getScreenY()
-                                    - dragOffsetY
-                    );
-                }
-        );
-
-        /*
-         * Double click title bar:
-         *
-         * maximize / restore.
-         */
-        topBar.setOnMouseClicked(
-                event -> {
-
-                    if (
-                            event.getClickCount() == 2
-                                    &&
-                                    !isWindowControl(event)
-                    ) {
-
-                        toggleManualMaximize(
-                                stage
-                        );
-                    }
-                }
-        );
+                toggleManualMaximize(stage);
+            }
+        });
 
         return topBar;
     }
 
-    /*
-     * =========================================================
-     * WINDOW BUTTON SIZE
-     * =========================================================
-     */
+    private void configureWindowButton(Button button) {
 
-    private void configureWindowButton(
-            Button button
-    ) {
-
-        button.setMinSize(
-                44,
-                34
-        );
-
-        button.setPrefSize(
-                44,
-                34
-        );
-
-        button.setMaxSize(
-                44,
-                34
-        );
-
-        button.setFocusTraversable(
-                false
-        );
+        button.setMinSize(44, 34);
+        button.setPrefSize(44, 34);
+        button.setMaxSize(44, 34);
+        button.setFocusTraversable(false);
     }
 
-    /*
-     * =========================================================
-     * CHECK WINDOW BUTTON
-     * =========================================================
-     */
+    private boolean isWindowControl(MouseEvent event) {
 
-    private boolean isWindowControl(
-            MouseEvent event
-    ) {
-
-        if (
-                !(event.getTarget()
-                        instanceof Node)
-        ) {
-
+        if (!(event.getTarget() instanceof Node)) {
             return false;
         }
 
-        Node node =
-                (Node)
-                        event.getTarget();
+        Node node = (Node) event.getTarget();
 
-        while (
-                node != null
-        ) {
+        while (node != null) {
 
-            if (
-                    node instanceof Button
-            ) {
+            if (node instanceof Button) {
 
-                Button button =
-                        (Button) node;
+                Button button = (Button) node;
 
-                if (
-                        button
-                                .getStyleClass()
-                                .contains(
-                                        "window-button"
-                                )
-                ) {
-
+                if (button.getStyleClass().contains("window-button")) {
                     return true;
                 }
             }
 
-            node =
-                    node.getParent();
+            node = node.getParent();
         }
 
         return false;
     }
 
-    /*
-     * =========================================================
-     * MANUAL MAXIMIZE
-     * =========================================================
-     */
-
-    private void toggleManualMaximize(
-            Stage stage
-    ) {
+    private void toggleManualMaximize(Stage stage) {
 
         if (!maximized) {
-
             maximizeWindow(stage);
-
         } else {
-
             restoreWindow(stage);
         }
     }
 
-    /*
-     * =========================================================
-     * MAXIMIZE WINDOW
-     * =========================================================
-     */
+    private void maximizeWindow(Stage stage) {
 
-    private void maximizeWindow(
-            Stage stage
-    ) {
+        restoreX = stage.getX();
+        restoreY = stage.getY();
+        restoreWidth = stage.getWidth();
+        restoreHeight = stage.getHeight();
 
-        restoreX =
-                stage.getX();
+        Screen screen = getCurrentScreen(stage);
+        Rectangle2D bounds = screen.getVisualBounds();
 
-        restoreY =
-                stage.getY();
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 
-        restoreWidth =
-                stage.getWidth();
-
-        restoreHeight =
-                stage.getHeight();
-
-        Screen screen =
-                getCurrentScreen(stage);
-
-        Rectangle2D bounds =
-                screen.getVisualBounds();
-
-        stage.setX(
-                bounds.getMinX()
-        );
-
-        stage.setY(
-                bounds.getMinY()
-        );
-
-        stage.setWidth(
-                bounds.getWidth()
-        );
-
-        stage.setHeight(
-                bounds.getHeight()
-        );
-
-        maximized =
-                true;
-
-        maximizeButton.setText(
-                "❐"
-        );
+        maximized = true;
+        maximizeButton.setText("❐");
     }
 
-    /*
-     * =========================================================
-     * RESTORE WINDOW
-     * =========================================================
-     */
+    private void restoreWindow(Stage stage) {
 
-    private void restoreWindow(
-            Stage stage
-    ) {
+        stage.setX(restoreX);
+        stage.setY(restoreY);
+        stage.setWidth(restoreWidth);
+        stage.setHeight(restoreHeight);
 
-        stage.setX(
-                restoreX
-        );
-
-        stage.setY(
-                restoreY
-        );
-
-        stage.setWidth(
-                restoreWidth
-        );
-
-        stage.setHeight(
-                restoreHeight
-        );
-
-        maximized =
-                false;
-
-        maximizeButton.setText(
-                "□"
-        );
+        maximized = false;
+        maximizeButton.setText("□");
     }
 
-    /*
-     * =========================================================
-     * CURRENT SCREEN
-     * =========================================================
-     */
+    private Screen getCurrentScreen(Stage stage) {
 
-    private Screen getCurrentScreen(
-            Stage stage
-    ) {
+        double centerX = stage.getX() + stage.getWidth() / 2;
+        double centerY = stage.getY() + stage.getHeight() / 2;
 
-        double centerX =
-                stage.getX()
-                        +
-                        stage.getWidth() / 2;
+        for (Screen screen : Screen.getScreens()) {
 
-        double centerY =
-                stage.getY()
-                        +
-                        stage.getHeight() / 2;
+            Rectangle2D bounds = screen.getBounds();
 
-        for (
-                Screen screen :
-                Screen.getScreens()
-        ) {
-
-            Rectangle2D bounds =
-                    screen.getBounds();
-
-            if (
-                    bounds.contains(
-                            centerX,
-                            centerY
-                    )
-            ) {
-
+            if (bounds.contains(centerX, centerY)) {
                 return screen;
             }
         }
@@ -801,234 +328,81 @@ topBar.setMaxWidth(Double.MAX_VALUE);
         return Screen.getPrimary();
     }
 
-    /*
-     * =========================================================
-     * HOME SCREEN
-     * =========================================================
-     */
+    private VBox createHomePage(Stage stage) {
 
-    private VBox createHomePage(
-            Stage stage
-    ) {
+        VBox hero = new VBox(18);
+        hero.getStyleClass().add("hero");
+        hero.setAlignment(Pos.CENTER);
 
-        VBox hero =
-                new VBox(18);
+        HBox versionArea = new HBox(7);
+        versionArea.setAlignment(Pos.CENTER);
 
-        hero
-                .getStyleClass()
-                .add(
-                        "hero"
-                );
+        Label version = new Label("VERSION 0.1");
+        version.getStyleClass().add("version");
 
-        hero.setAlignment(
-                Pos.CENTER
-        );
+        Label beta = new Label("BETA");
+        beta.getStyleClass().add("beta");
 
-        /*
-         * VERSION
-         */
-        HBox versionArea =
-                new HBox(7);
+        versionArea.getChildren().addAll(version, beta);
 
-        versionArea.setAlignment(
-                Pos.CENTER
-        );
+        Label logo = new Label("M");
+        logo.getStyleClass().add("hero-logo");
 
-        Label version =
-                new Label(
-                        "VERSION 0.1"
-                );
+        Label title = new Label("MINION");
+        title.getStyleClass().add("title");
 
-        version
-                .getStyleClass()
-                .add(
-                        "version"
-                );
+        Label subtitle = new Label("UNIVERSAL RECOVERY ENGINE");
+        subtitle.getStyleClass().add("subtitle");
 
-        Label beta =
-                new Label(
-                        "BETA"
-                );
-
-        beta
-                .getStyleClass()
-                .add(
-                        "beta"
-                );
-
-        versionArea
-                .getChildren()
-                .addAll(
-                        version,
-                        beta
-                );
-
-        /*
-         * LOGO
-         */
-        Label logo =
-                new Label(
-                        "M"
-                );
-
-        logo
-                .getStyleClass()
-                .add(
-                        "hero-logo"
-                );
-
-        /*
-         * TITLE
-         */
-        Label title =
-                new Label(
-                        "MINION"
-                );
-
-        title
-                .getStyleClass()
-                .add(
-                        "title"
-                );
-
-        Label subtitle =
-                new Label(
-                        "UNIVERSAL RECOVERY ENGINE"
-                );
-
-        subtitle
-                .getStyleClass()
-                .add(
-                        "subtitle"
-                );
-
-        /*
-         * DIVIDER
-         */
         javafx.scene.layout.Region divider =
                 new javafx.scene.layout.Region();
 
-        divider
-                .getStyleClass()
-                .add(
-                        "divider"
-                );
+        divider.getStyleClass().add("divider");
+        divider.setMaxWidth(370);
 
-        divider.setMaxWidth(
-                370
+        Label tagline = new Label(
+                "Recover what matters. Analyse what remains."
         );
 
-        /*
-         * TAGLINE
-         */
-        Label tagline =
-                new Label(
-                        "Recover what matters. Analyse what remains."
-                );
+        tagline.getStyleClass().add("tagline");
 
-        tagline
-                .getStyleClass()
-                .add(
-                        "tagline"
-                );
+        HBox featureCards = new HBox(14);
+        featureCards.setAlignment(Pos.CENTER);
 
-        /*
-         * FEATURE CARDS
-         */
-        HBox featureCards =
-                new HBox(14);
-
-        featureCards.setAlignment(
-                Pos.CENTER
+        featureCards.getChildren().addAll(
+                createFeatureCard("◫", "FAT32", "Deleted file recovery"),
+                createFeatureCard("▤", "NTFS", "Filesystem analysis"),
+                createFeatureCard("◉", "AI PREDICTION", "Recovery confidence")
         );
 
-        featureCards
-                .getChildren()
-                .addAll(
+        Button startButton = new Button("➜   BEGIN RECOVERY");
+        startButton.getStyleClass().add("start-button");
+        startButton.setFocusTraversable(false);
 
-                        createFeatureCard(
-                                "◫",
-                                "FAT32",
-                                "Deleted file recovery"
-                        ),
+        startButton.setOnAction(event -> {
 
-                        createFeatureCard(
-                                "▤",
-                                "NTFS",
-                                "Filesystem analysis"
-                        ),
+            DriveSelectionView driveView = new DriveSelectionView(
+                    stage,
+                    () -> layout.setCenter(homePage),
+                    selectedSource -> openScanner(selectedSource)
+            );
 
-                        createFeatureCard(
-                                "◉",
-                                "AI PREDICTION",
-                                "Recovery confidence"
-                        )
-                );
+            layout.setCenter(driveView);
+        });
 
-        /*
-         * START BUTTON
-         */
-        Button startButton =
-                new Button(
-                        "➜   BEGIN RECOVERY"
-                );
-
-        startButton
-                .getStyleClass()
-                .add(
-                        "start-button"
-                );
-
-        startButton.setFocusTraversable(
-                false
+        hero.getChildren().addAll(
+                versionArea,
+                logo,
+                title,
+                subtitle,
+                divider,
+                tagline,
+                featureCards,
+                startButton
         );
-
-        startButton.setOnAction(
-                event -> {
-
-                    DriveSelectionView driveView =
-                            new DriveSelectionView(
-
-                                    stage,
-
-                                    () ->
-                                            layout.setCenter(
-                                                    homePage
-                                            ),
-
-                                    selectedSource ->
-                                            openScanner(
-                                                    selectedSource
-                                            )
-                            );
-
-                    layout.setCenter(
-                            driveView
-                    );
-                }
-        );
-
-        hero
-                .getChildren()
-                .addAll(
-                        versionArea,
-                        logo,
-                        title,
-                        subtitle,
-                        divider,
-                        tagline,
-                        featureCards,
-                        startButton
-                );
 
         return hero;
     }
-
-    /*
-     * =========================================================
-     * FEATURE CARD
-     * =========================================================
-     */
 
     private VBox createFeatureCard(
             String iconText,
@@ -1036,393 +410,180 @@ topBar.setMaxWidth(Double.MAX_VALUE);
             String subtitleText
     ) {
 
-        VBox card =
-                new VBox(6);
+        VBox card = new VBox(6);
+        card.getStyleClass().add("feature-card");
+        card.setAlignment(Pos.CENTER);
 
-        card
-                .getStyleClass()
-                .add(
-                        "feature-card"
-                );
+        Label icon = new Label(iconText);
+        icon.getStyleClass().add("card-icon");
 
-        card.setAlignment(
-                Pos.CENTER
-        );
+        Label title = new Label(titleText);
+        title.getStyleClass().add("card-title");
 
-        Label icon =
-                new Label(
-                        iconText
-                );
+        Label subtitle = new Label(subtitleText);
+        subtitle.getStyleClass().add("card-subtitle");
 
-        icon
-                .getStyleClass()
-                .add(
-                        "card-icon"
-                );
-
-        Label title =
-                new Label(
-                        titleText
-                );
-
-        title
-                .getStyleClass()
-                .add(
-                        "card-title"
-                );
-
-        Label subtitle =
-                new Label(
-                        subtitleText
-                );
-
-        subtitle
-                .getStyleClass()
-                .add(
-                        "card-subtitle"
-                );
-
-        card
-                .getChildren()
-                .addAll(
-                        icon,
-                        title,
-                        subtitle
-                );
+        card.getChildren().addAll(icon, title, subtitle);
 
         return card;
     }
 
-    /*
-     * =========================================================
-     * MODULE 3 — SCANNER
-     * =========================================================
-     */
+    private void openScanner(File source) {
 
-    private void openScanner(
-            File source
-    ) {
+        System.out.println("Starting scan: " + source.getAbsolutePath());
 
-        System.out.println(
-                "Starting scan: "
-                        +
-                        source.getAbsolutePath()
+        ScanView scanView = new ScanView(
+                source,
+                () -> {
+
+                    DriveSelectionView driveView = new DriveSelectionView(
+                            stageReference,
+                            () -> layout.setCenter(homePage),
+                            selectedSource -> openScanner(selectedSource)
+                    );
+
+                    layout.setCenter(driveView);
+                },
+                summary -> openAutomaticRecovery(summary.getSource())
         );
 
-        ScanView scanView =
-                new ScanView(
-
-                        source,
-
-                        /*
-                         * Back to source selection.
-                         */
-                        () -> {
-
-                            DriveSelectionView driveView =
-                                    new DriveSelectionView(
-
-                                            stageReference,
-
-                                            () ->
-                                                    layout.setCenter(
-                                                            homePage
-                                                    ),
-
-                                            selectedSource ->
-                                                    openScanner(
-                                                            selectedSource
-                                                    )
-                                    );
-
-                            layout.setCenter(
-                                    driveView
-                            );
-                        },
-
-                        /*
-                         * Scan finished.
-                         */
-                        summary ->
-                                openResults(
-                                        summary
-                                )
-                );
-
-        layout.setCenter(
-                scanView
-        );
+        layout.setCenter(scanView);
     }
 
-    /*
-     * =========================================================
-     * MODULE 4 — RESULTS
-     * =========================================================
-     */
+    private ScrollPane createScrollableView(Node content) {
 
-    private void openResults(
-            ScanView.ScanSummary summary
+        ScrollPane pane = new ScrollPane(content);
+        pane.setFitToWidth(true);
+        pane.setFitToHeight(false);
+        pane.setPannable(true);
+
+        pane.addEventFilter(
+                javafx.scene.input.ScrollEvent.SCROLL,
+                event -> {
+
+                    if (event.getDeltaY() != 0) {
+                        pane.setVvalue(
+                                pane.getVvalue() - event.getDeltaY() * 0.0025
+                        );
+                        event.consume();
+                    }
+                }
+        );
+
+        pane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        pane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        pane.getStyleClass().add("ure-scroll-pane");
+
+        return pane;
+    }
+
+    private void openAutomaticRecovery(File source) {
+
+        RecoveryModeView recoveryModeView = new RecoveryModeView(
+                stageReference,
+                source,
+                null,
+                () -> openScanner(source)
+        );
+
+        layout.setCenter(createScrollableView(recoveryModeView));
+    }
+
+    private void openResults(ScanView.ScanSummary summary) {
+
+        ResultsView resultsView = new ResultsView(
+                summary,
+                () -> openScanner(summary.getSource()),
+                () -> openRecoveryAnalysis(summary)
+        );
+
+        layout.setCenter(createScrollableView(resultsView));
+    }
+
+    private void openRecoveryAnalysis(ScanView.ScanSummary summary) {
+
+        RecoveryAnalysisView recoveryView = new RecoveryAnalysisView(
+                summary.getSource(),
+                () -> openResults(summary),
+                recoveryResult -> openRecoveryMode(summary, recoveryResult)
+        );
+
+        layout.setCenter(createScrollableView(recoveryView));
+    }
+
+    private void openRecoveryMode(
+            ScanView.ScanSummary summary,
+            common.model.RecoveryResult recoveryResult
     ) {
 
-        ResultsView resultsView =
-                new ResultsView(
-
-                        summary,
-
-                        () ->
-                                openScanner(
-                                        summary.getSource()
-                                ),
-
-                        () ->
-                                openRecoveryAnalysis(
-                                        summary
-                                )
-                );
-
-        ScrollPane scrollPane = new ScrollPane(resultsView);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(false);
-        scrollPane.setPannable(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.getStyleClass().add("ure-scroll-pane");
-
-        layout.setCenter(scrollPane);
-    }
-
-    /*
-     * =========================================================
-     * MODULE 5 — RECOVERY ANALYSIS
-     * =========================================================
-     */
-
-    private void openRecoveryAnalysis(
-            ScanView.ScanSummary summary
-    ) {
-
-        RecoveryAnalysisView recoveryView =
-                new RecoveryAnalysisView(
-
-                        summary.getSource(),
-
-                        () ->
-                                openResults(
-                                        summary
-                                ),
-
-                        recoveryResult ->
-                         openRecoveryMode(
-                          summary,
-                         recoveryResult
-                                         )
-                              );
-
-        layout.setCenter(
-                recoveryView
+        RecoveryModeView recoveryModeView = new RecoveryModeView(
+                stageReference,
+                summary.getSource(),
+                recoveryResult,
+                () -> openRecoveryAnalysis(summary)
         );
+
+        layout.setCenter(createScrollableView(recoveryModeView));
     }
-
-/*
- * =========================================================
- * MODULE 6 — RECOVERY MODE
- * =========================================================
- */
-
-private void openRecoveryMode(
-        ScanView.ScanSummary summary,
-        common.model.RecoveryResult recoveryResult
-) {
-
-    RecoveryModeView recoveryModeView =
-            new RecoveryModeView(
-
-                    stageReference,
-
-                    summary.getSource(),
-
-                    recoveryResult,
-
-                    () ->
-                            openRecoveryAnalysis(
-                                    summary
-                            )
-            );
-
-
-    layout.setCenter(
-            recoveryModeView
-    );
-}
-
-    /*
-     * =========================================================
-     * BOTTOM BAR
-     * =========================================================
-     */
 
     private HBox createBottomBar() {
 
-        HBox bottomBar =
-                new HBox(9);
+        HBox bottomBar = new HBox(9);
+        bottomBar.getStyleClass().add("bottom-bar");
+        bottomBar.setAlignment(Pos.CENTER_LEFT);
 
-        bottomBar
-                .getStyleClass()
-                .add(
-                        "bottom-bar"
-                );
+        Label pulse = new Label("●");
+        pulse.getStyleClass().add("pulse");
 
-        bottomBar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        Label pulse =
-                new Label(
-                        "●"
-                );
-
-        pulse
-                .getStyleClass()
-                .add(
-                        "pulse"
-                );
-
-        Label status =
-                new Label(
-                        "SYSTEM READY"
-                );
-
-        status
-                .getStyleClass()
-                .add(
-                        "footer-text"
-                );
+        Label status = new Label("SYSTEM READY");
+        status.getStyleClass().add("footer-text");
 
         javafx.scene.layout.Region spacer =
                 new javafx.scene.layout.Region();
 
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label footer = new Label(
+                "MINION URE  •  READ-ONLY RECOVERY ENVIRONMENT"
         );
 
-        Label footer =
-                new Label(
-                        "MINION URE  •  READ-ONLY RECOVERY ENVIRONMENT"
-                );
+        footer.getStyleClass().add("footer-text");
 
-        footer
-                .getStyleClass()
-                .add(
-                        "footer-text"
-                );
-
-        bottomBar
-                .getChildren()
-                .addAll(
-                        pulse,
-                        status,
-                        spacer,
-                        footer
-                );
+        bottomBar.getChildren().addAll(pulse, status, spacer, footer);
 
         return bottomBar;
     }
 
-    /*
-     * =========================================================
-     * MAGNETIC CURSOR
-     * =========================================================
-     */
+    private void createMagneticCursor(Scene scene, StackPane root) {
 
-    private void createMagneticCursor(
-            Scene scene,
-            StackPane root
-    ) {
+        Circle ring = new Circle(9);
+        ring.setFill(Color.TRANSPARENT);
+        ring.setStroke(Color.rgb(233, 84, 32, 0.92));
+        ring.setStrokeWidth(1.25);
 
-        Circle ring =
-                new Circle(
-                        9
-                );
+        Circle dot = new Circle(2.4);
+        dot.setFill(Color.web("#FF7948"));
 
-        ring.setFill(
-                Color.TRANSPARENT
-        );
+        StackPane cursor = new StackPane(ring, dot);
+        cursor.setManaged(false);
+        cursor.setMouseTransparent(true);
 
-        ring.setStroke(
-                Color.rgb(
-                        233,
-                        84,
-                        32,
-                        0.92
-                )
-        );
+        ring.setMouseTransparent(true);
+        dot.setMouseTransparent(true);
 
-        ring.setStrokeWidth(
-                1.25
-        );
+        cursor.setVisible(false);
+        root.getChildren().add(cursor);
 
-        Circle dot =
-                new Circle(
-                        2.4
-                );
-
-        dot.setFill(
-                Color.web(
-                        "#FF7948"
-                )
-        );
-
-        StackPane cursor =
-                new StackPane(
-                        ring,
-                        dot
-                );
-
-        cursor.setManaged(
-                false
-        );
-
-        cursor.setMouseTransparent(
-                true
-        );
-
-        ring.setMouseTransparent(
-                true
-        );
-
-        dot.setMouseTransparent(
-                true
-        );
-
-        cursor.setVisible(
-                false
-        );
-
-        root
-                .getChildren()
-                .add(
-                        cursor
-                );
-
-        scene.setCursor(
-                Cursor.NONE
-        );
+        scene.setCursor(Cursor.DEFAULT);
 
         scene.addEventFilter(
                 MouseEvent.MOUSE_ENTERED,
-                event ->
-                        cursor.setVisible(
-                                true
-                        )
+                event -> cursor.setVisible(true)
         );
 
         scene.addEventFilter(
                 MouseEvent.MOUSE_EXITED,
-                event ->
-                        cursor.setVisible(
-                                false
-                        )
+                event -> cursor.setVisible(false)
         );
 
         scene.addEventFilter(
@@ -1430,19 +591,11 @@ private void openRecoveryMode(
                 event -> {
 
                     cursor.relocate(
-
-                            event.getSceneX()
-                                    - 9,
-
-                            event.getSceneY()
-                                    - 9
+                            event.getSceneX() - 9,
+                            event.getSceneY() - 9
                     );
 
-                    updateMagneticCursor(
-                            event,
-                            ring,
-                            dot
-                    );
+                    updateMagneticCursor(event, ring, dot);
                 }
         );
 
@@ -1451,12 +604,8 @@ private void openRecoveryMode(
                 event -> {
 
                     cursor.relocate(
-
-                            event.getSceneX()
-                                    - 9,
-
-                            event.getSceneY()
-                                    - 9
+                            event.getSceneX() - 9,
+                            event.getSceneY() - 9
                     );
                 }
         );
@@ -1465,13 +614,8 @@ private void openRecoveryMode(
                 MouseEvent.MOUSE_PRESSED,
                 event -> {
 
-                    ring.setRadius(
-                            6.5
-                    );
-
-                    dot.setRadius(
-                            3.0
-                    );
+                    ring.setRadius(6.5);
+                    dot.setRadius(3.0);
                 }
         );
 
@@ -1479,22 +623,11 @@ private void openRecoveryMode(
                 MouseEvent.MOUSE_RELEASED,
                 event -> {
 
-                    ring.setRadius(
-                            9
-                    );
-
-                    dot.setRadius(
-                            2.4
-                    );
+                    ring.setRadius(9);
+                    dot.setRadius(2.4);
                 }
         );
     }
-
-    /*
-     * =========================================================
-     * MAGNETIC CURSOR DETECTION
-     * =========================================================
-     */
 
     private void updateMagneticCursor(
             MouseEvent event,
@@ -1502,92 +635,44 @@ private void openRecoveryMode(
             Circle dot
     ) {
 
-        Object target =
-                event.getTarget();
+        Object target = event.getTarget();
+        boolean clickable = false;
 
-        boolean clickable =
-                false;
+        if (target instanceof Node) {
 
-        if (
-                target instanceof Node
-        ) {
+            Node node = (Node) target;
 
-            Node node =
-                    (Node) target;
+            while (node != null) {
 
-            while (
-                    node != null
-            ) {
-
-                if (
-                        node instanceof Button
-                ) {
-
-                    clickable =
-                            true;
-
+                if (node instanceof Button) {
+                    clickable = true;
                     break;
                 }
 
-                if (
-                        node
-                                .getStyleClass()
-                                .contains(
-                                        "drive-card"
-                                )
-                ) {
-
-                    clickable =
-                            true;
-
+                if (node.getStyleClass().contains("drive-card")) {
+                    clickable = true;
                     break;
                 }
 
-                node =
-                        node.getParent();
+                node = node.getParent();
             }
         }
 
         if (clickable) {
 
-            ring.setRadius(
-                    13
-            );
-
-            ring.setStrokeWidth(
-                    1.5
-            );
-
-            dot.setRadius(
-                    2.8
-            );
+            ring.setRadius(13);
+            ring.setStrokeWidth(1.5);
+            dot.setRadius(2.8);
 
         } else {
 
-            ring.setRadius(
-                    9
-            );
-
-            ring.setStrokeWidth(
-                    1.25
-            );
-
-            dot.setRadius(
-                    2.4
-            );
+            ring.setRadius(9);
+            ring.setStrokeWidth(1.25);
+            dot.setRadius(2.4);
         }
     }
 
-    /*
-     * =========================================================
-     * MAIN
-     * =========================================================
-     */
-
-    public static void main(
-            String[] args
-    ) {
-
+    public static void main(String[] args) {
         launch(args);
     }
 }
