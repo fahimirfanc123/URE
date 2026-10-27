@@ -229,7 +229,7 @@ flowchart TD
     J --> K["Choose a separate destination drive"]
     K --> L["Recover files and validate the output"]
     L --> M["Close URE and safely remove the USB"]
-```
+
 
 ### Phase 1 — Prepare the source device
 
