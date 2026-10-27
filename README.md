@@ -215,7 +215,7 @@ This section describes the expected end-to-end recovery session. The exact scree
 
 ### Workflow overview
 
-```mermaid:
+```mermaid,
 flowchart TD
     A["Connect USB"] --> B["Identify the correct physical drive"]
     B --> C["Check device and partition information"]
