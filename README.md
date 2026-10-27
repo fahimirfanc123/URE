@@ -215,7 +215,14 @@ This section describes the expected end-to-end recovery session. The exact scree
 
 ### Workflow overview
 
-```mermaid,
+
+## Workflow Session — End-to-End USB Recovery
+
+This section describes the expected end-to-end recovery session. The exact screen names and available operations depend on the current GUI implementation.
+
+### Workflow overview
+
+```mermaid
 flowchart TD
     A["Connect USB"] --> B["Identify the correct physical drive"]
     B --> C["Check device and partition information"]
@@ -230,6 +237,10 @@ flowchart TD
     K --> L["Recover files and validate the output"]
     L --> M["Close URE and safely remove the USB"]
 
+    classDef safety fill:#fff3cd,stroke:#b8860b,color:#222
+    classDef process fill:#e8f1ff,stroke:#356ac3,color:#222
+    class A,B,C,D,E,F,G,H,I,J,K,L,M process
+```
 
 ### Phase 1 — Prepare the source device
 
@@ -281,9 +292,9 @@ Recovery status meanings:
 
 | Status | Meaning |
 |---|---|
-| `EXACT` | The engine reports an exact recovery according to its implemented verification rules |
-| `PARTIAL` | Some data was recovered, but the result is incomplete |
-| `FAILED` | Recovery did not succeed |
+| `EXACT` | The engine reports an exact recovery according to its implemented verification rules. |
+| `PARTIAL` | Some data was recovered, but the result is incomplete. |
+| `FAILED` | Recovery did not succeed. |
 
 A non-null output file does not by itself mean recovery succeeded. Validate the file's size, content, and ability to open.
 
@@ -299,6 +310,20 @@ A non-null output file does not by itself mean recovery succeeded. Validate the 
 6. Wait for the operation to finish before unplugging the drive.
 
 **Expected result:** The session ends without interrupting device access or risking incomplete writes.
+
+### If a workflow phase fails
+
+Do not immediately repeat the scan or change the source drive. Record:
+
+- The phase in which the failure occurred.
+- The selected source device and detected filesystem.
+- The operation that failed.
+- The full error message or terminal stack trace.
+- Whether any output files were created and their reported recovery statuses.
+
+Reproduce bugs with a disposable disk image or nonessential USB whenever possible.
+
+> **Safety rule:** Preserve the source data, use read-only access where supported, and recover to a separate destination. Never format or repair the source as a troubleshooting shortcut.
 
 ### If a workflow phase fails
 
